@@ -99,10 +99,10 @@ int main(int argc, char** argv) {
     std::unique_ptr<jsonrpc::FormatHandler> formatHandler(new jsonrpc::JsonFormatHandler());
         jsonrpc::Client client(*formatHandler);
 
-		std::shared_ptr<FormattedData> jsonRequest = client.BuildRequestData(std::move(method), "add", 3, 2);
+		std::shared_ptr<FormattedData> jsonRequest = client.BuildRequestData("add", 3, 2);
 		std::cout << jsonRequest->GetData(); // this will output the json-rpc request string
 		
-		jsonRequest.reset(client.BuildRequestData(std::move(method), "concat", "Hello, ", "World!"));
+		jsonRequest.reset(client.BuildRequestData("concat", "Hello, ", "World!"));
 		std::cout << jsonRequest->GetData();
 
         jsonrpc::Request::Parameters params;
@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
             a.emplace_back(std::numeric_limits<int32_t>::max());
             params.push_back(std::move(a));
         }
-		jsonRequest.reset(client.BuildRequestData(std::move(method), "add_array", params));
+		jsonRequest.reset(client.BuildRequestData("add_array", params));
 		std::cout << jsonRequest->GetData(); 
 
         params.clear();
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
             a.emplace_back(a);
             params.push_back(std::move(a));
         }
-		jsonRequest.reset(client.BuildRequestData(std::move(method), "to_struct", params));
+		jsonRequest.reset(client.BuildRequestData("to_struct", params));
 		std::cout << jsonRequest->GetData(); 
 
     return 0;
