@@ -1,21 +1,21 @@
 
 # jsonrpc-lean
 
-An [LGPL](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) licensed, client/server, transport-agnostic, JSON RPC library for C++11.
+An [LGPL](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) licensed, client/server, transport-agnostic, JSON-RPC library for C++11.
 
-The initial implementation for jsonrpc-lean is derived from xsonrpc (https://github.com/erijo/xsonrpc) by Erik Johansson (https://github.com/erijo/). Much thanks to him for doing all the heavy work.
+The initial jsonrpc-lean implementation is derived from xsonrpc (https://github.com/erijo/xsonrpc) by Erik Johansson (https://github.com/erijo/). Much thanks to him for doing all the heavy work.
 
 The main idea behind branching xsonrpc and building a new project is to have a simple, transport-agnostic, header-only implementation, with as little external dependencies as possible. 
 
 Anyone can use this lib by just adding the include folder to their include path and they are good to go.
 
-Currently, the only dependency to use jsonrpc-lean is rapidjson (https://github.com/miloyip/rapidjson), which is also a header-only implementation. Add rapidjson to your include path, and done.
+Currently, the only dependency is rapidjson (https://github.com/miloyip/rapidjson), which is also a header-only implementation. Add rapidjson to your include path, and done.
 
 Another advantage of removing the dependencies is that now it is easy to compile and use on most platforms that support c++11, without much work.
 
 ## Examples
 
-A simple server that process some JSON-RPC requests:
+A simple server that process JSON-RPC requests:
 
 ```C++
 #include "jsonrpc-lean/server.h"
@@ -90,7 +90,7 @@ int main() {
 }
 ```
 
-A client capable of calling the server above could look like this:
+A client capable of generating requests for the server above could look like this:
 
 ```C++
 #include "jsonrpc-lean/client.h"
@@ -130,9 +130,9 @@ int main(int argc, char** argv) {
 }
 ```
 
-## Build Requirements
+## Usage Requirements
 
-To build jsonrpc-lean you need:
+To use jsonrpc-lean on your project, all you need is:
 
 * A C++11 capable compiler (GCC 5.0+ (Linux), XCode/Clang (OSX 10.7+), MSVC 14.0+ (Visual Studio 2015))
 * [rapidjson](https://github.com/miloyip/rapidjson) (Only need the include folder on your include path, don't worry about compiling it)
