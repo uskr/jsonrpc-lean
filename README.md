@@ -134,6 +134,6 @@ int main(int argc, char** argv) {
 
 To build jsonrpc-lean you need:
 
-* A C++11 capable compiler (GCC 5.0+ (Linux), XCode/Clang (OSX 10.7+), )
+* A C++11 capable compiler (GCC 5.0+ (Linux), XCode/Clang (OSX 10.7+), MSVC 14.0+ (Visual Studio 2015))
 * [rapidjson](https://github.com/miloyip/rapidjson) (Only need the include folder on your include path, don't worry about compiling it)
 
