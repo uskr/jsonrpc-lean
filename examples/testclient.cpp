@@ -64,6 +64,21 @@ void LogCall(jsonrpc::Client& client, std::string method, T&&... args) {
     std::cout << "\n\n";
 }
 
+template<typename... T>
+void LogNotificationCall(jsonrpc::Client& client, std::string method, T&&... args) {
+    std::cout << method << '(';
+    LogArguments(std::forward<T>(args)...);
+    std::cout << "):\n>>> ";
+    try {
+        std::cout << client.BuildNotificationData(std::move(method), std::forward<T>(args)...)->GetData();
+    }
+    catch (const jsonrpc::Fault& fault) {
+        ++CallErrors;
+        std::cout << "Error: " << fault.what();
+    }
+    std::cout << "\n\n";
+}
+
 int main(int argc, char** argv) {
     std::unique_ptr<jsonrpc::FormatHandler> formatHandler(new jsonrpc::JsonFormatHandler());
 
@@ -84,6 +99,7 @@ int main(int argc, char** argv) {
 
         LogCall(client, "to_binary", "Hello World!");
         LogCall(client, "from_binary", jsonrpc::Value("Hi!", true));
+		LogNotificationCall(client, "print_notification", "This is just a notification, no response expected!");
 
         params.clear();
         {
@@ -127,11 +143,6 @@ int main(int argc, char** argv) {
             }
             params.emplace_back(std::move(calls));
         }
-        LogCall(client, "system.multicall", params);
-        LogCall(client, "system.listMethods");
-        LogCall(client, "system.methodHelp", "add");
-        LogCall(client, "system.methodSignature", "add");
-
 
     } catch (const std::exception& ex) {
         std::cerr << "Error: " << ex.what() << "\n";

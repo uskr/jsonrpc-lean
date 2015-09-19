@@ -61,6 +61,10 @@ jsonrpc::Value::Struct ToStruct(const jsonrpc::Value::Array& a) {
 	return s;
 }
 
+void PrintNotification(const std::string& a) {
+    std::cout << "notification: " << a << std::endl;
+}
+
 void RunServer() {
 	Math math;
 	jsonrpc::Server server;
@@ -78,19 +82,21 @@ void RunServer() {
 	dispatcher.AddMethod("to_binary", &ToBinary);
 	dispatcher.AddMethod("from_binary", &FromBinary);
 	dispatcher.AddMethod("to_struct", &ToStruct);
+	dispatcher.AddMethod("print_notification", &PrintNotification);
 
 	dispatcher.GetMethod("add")
 		.SetHelpText("Add two integers")
 		.AddSignature(jsonrpc::Value::Type::INTEGER_32, jsonrpc::Value::Type::INTEGER_32, jsonrpc::Value::Type::INTEGER_32);
 
-	bool run = true;
+	//bool run = true;
 	//dispatcher.AddMethod("exit", [&]() { run = false; }).SetHidden();
 	
 	const char addRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"id\":0,\"params\":[3,2]}";
 	const char concatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":1,\"params\":[\"Hello, \",\"World!\"]}";
 	const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
 	const char toBinaryRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_binary\",\"id\":3,\"params\":[\"Hello World!\"]}";
-	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
+	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":4,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
+	const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
 
 	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
     std::cout << "request: " << addRequest << std::endl;
@@ -116,6 +122,11 @@ void RunServer() {
     std::cout << "request: " << toStructRequest << std::endl;
     outputFormatedData = server.HandleRequest(toStructRequest);
     std::cout << "response: " << outputFormatedData->GetData() << std::endl;
+
+    outputFormatedData.reset();
+    std::cout << "request: " << printNotificationRequest << std::endl;
+    outputFormatedData = server.HandleRequest(printNotificationRequest);
+    std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
 }
 
 int main() {

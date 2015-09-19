@@ -60,6 +60,19 @@ namespace jsonrpc {
             return BuildRequestDataInternal(methodName, params, std::forward<RestTypes>(rest)...);
         }
 
+        std::shared_ptr<FormattedData> BuildNotificationData(const std::string& methodName, const Request::Parameters& params = {}) {
+            return BuildNotificationDataInternal(methodName, params);
+        }
+
+        template<typename FirstType, typename... RestTypes>
+        typename std::enable_if<!std::is_same<typename std::decay<FirstType>::type, Request::Parameters>::value, std::shared_ptr<FormattedData>>::type
+        BuildNotificationData(const std::string& methodName, FirstType&& first, RestTypes&&... rest) {
+            Request::Parameters params;
+            params.emplace_back(std::forward<FirstType>(first));
+
+            return BuildNotificationDataInternal(methodName, params, std::forward<RestTypes>(rest)...);
+        }
+
         Response ParseResponse(const std::string& aResponseData) {
             return ParseResponseInternal(aResponseData);
         }
@@ -80,6 +93,18 @@ namespace jsonrpc {
             auto writer = myFormatHandler.CreateWriter();
             const auto id = myId++;
             Request::Write(methodName, params, id, *writer);
+            return writer->GetData();
+        }
+
+        template<typename FirstType, typename... RestTypes>
+        std::shared_ptr<FormattedData> BuildNotificationDataInternal(const std::string& methodName, Request::Parameters& params, FirstType&& first, RestTypes&&... rest) {
+            params.emplace_back(std::forward<FirstType>(first));
+            return BuildNotificationDataInternal(methodName, params, std::forward<RestTypes>(rest)...);
+        }
+
+        std::shared_ptr<FormattedData> BuildNotificationDataInternal(const std::string& methodName, const Request::Parameters& params) {
+            auto writer = myFormatHandler.CreateWriter();
+            Request::Write(methodName, params, false, *writer);
             return writer->GetData();
         }
 

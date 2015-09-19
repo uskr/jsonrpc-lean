@@ -44,6 +44,10 @@ jsonrpc::Value::Struct ToStruct(const jsonrpc::Value::Array& a) {
 	return s;
 }
 
+void PrintNotification(const std::string& a) {
+    std::cout << "notification: " << a << std::endl;
+}
+
 int main() {
 	Math math;
 	jsonrpc::Server server;
@@ -59,12 +63,14 @@ int main() {
 	// if it is just a regular function (non-member or static), you can you the 2 parameter AddMethod
 	dispatcher.AddMethod("concat", &Concat);
 	dispatcher.AddMethod("to_struct", &ToStruct);
+	dispatcher.AddMethod("print_notification", &PrintNotification);
 
 	// on a real world, these requests come from your own transport implementation (sockets, http, ipc, named-pipes, etc)
 	const char addRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"id\":0,\"params\":[3,2]}";
 	const char concatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":1,\"params\":[\"Hello, \",\"World!\"]}";
 	const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
+	const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
 
 	std::shared_ptr<jsonrpc::FormattedData> outputFormattedData;
     std::cout << "request: " << addRequest << std::endl;
@@ -85,6 +91,11 @@ int main() {
     std::cout << "request: " << toStructRequest << std::endl;
     outputFormattedData = server.HandleRequest(toStructRequest);
     std::cout << "response: " << outputFormattedData->GetData() << std::endl;
+	
+	outputFormatedData.reset();
+    std::cout << "request: " << printNotificationRequest << std::endl;
+    outputFormatedData = server.HandleRequest(printNotificationRequest);
+    std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
 
 	return 0;
 }
@@ -125,6 +136,9 @@ int main(int argc, char** argv) {
 	}
 	jsonRequest.reset(client.BuildRequestData("to_struct", params));
 	std::cout << jsonRequest->GetData(); 
+	
+	jsonRequest.reset(client.BuildRequestData("print_notification", "This is just a notification, no response expected!"));
+	std::cout << jsonRequest->GetData();
 
     return 0;
 }
