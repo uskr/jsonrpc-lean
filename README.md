@@ -66,25 +66,25 @@ int main() {
 	const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
 
-	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
+	std::shared_ptr<jsonrpc::FormattedData> outputFormattedData;
     std::cout << "request: " << addRequest << std::endl;
-    outputFormatedData = server.HandleRequest(addRequest);
-    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
+    outputFormattedData = server.HandleRequest(addRequest);
+    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
 
-    outputFormatedData.reset();
+    outputFormattedData.reset();
     std::cout << "request: " << concatRequest << std::endl;
-    outputFormatedData = server.HandleRequest(concatRequest);
-    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
+    outputFormattedData = server.HandleRequest(concatRequest);
+    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
 
-    outputFormatedData.reset();
+    outputFormattedData.reset();
     std::cout << "request: " << addArrayRequest << std::endl;
-    outputFormatedData = server.HandleRequest(addArrayRequest);
-    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
+    outputFormattedData = server.HandleRequest(addArrayRequest);
+    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
 
-    outputFormatedData.reset();
+    outputFormattedData.reset();
     std::cout << "request: " << toStructRequest << std::endl;
-    outputFormatedData = server.HandleRequest(toStructRequest);
-    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
+    outputFormattedData = server.HandleRequest(toStructRequest);
+    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
 
 	return 0;
 }
