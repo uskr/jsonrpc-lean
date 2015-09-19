@@ -66,25 +66,25 @@ int main() {
 	const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
 
-	std::string outputBuffer;
-	std::cout << "request: " << addRequest << std::endl;
-	server.HandleRequest(addRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
+    std::cout << "request: " << addRequest << std::endl;
+    outputFormatedData = server.HandleRequest(addRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
-	outputBuffer = "";
-	std::cout << "request: " << concatRequest << std::endl;
-	server.HandleRequest(concatRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+    outputFormatedData.reset();
+    std::cout << "request: " << concatRequest << std::endl;
+    outputFormatedData = server.HandleRequest(concatRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
-	outputBuffer = "";
-	std::cout << "request: " << addArrayRequest << std::endl;
-	server.HandleRequest(addArrayRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+    outputFormatedData.reset();
+    std::cout << "request: " << addArrayRequest << std::endl;
+    outputFormatedData = server.HandleRequest(addArrayRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
-	outputBuffer = "";
-	std::cout << "request: " << toStructRequest << std::endl;
-	server.HandleRequest(toStructRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+    outputFormatedData.reset();
+    std::cout << "request: " << toStructRequest << std::endl;
+    outputFormatedData = server.HandleRequest(toStructRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
 	return 0;
 }
@@ -97,34 +97,34 @@ A client capable of generating requests for the server above could look like thi
 
 int main(int argc, char** argv) {
     std::unique_ptr<jsonrpc::FormatHandler> formatHandler(new jsonrpc::JsonFormatHandler());
-        jsonrpc::Client client(*formatHandler);
+	jsonrpc::Client client(*formatHandler);
 
-		std::shared_ptr<FormattedData> jsonRequest = client.BuildRequestData("add", 3, 2);
-		std::cout << jsonRequest->GetData(); // this will output the json-rpc request string
-		
-		jsonRequest.reset(client.BuildRequestData("concat", "Hello, ", "World!"));
-		std::cout << jsonRequest->GetData();
+	std::shared_ptr<FormattedData> jsonRequest = client.BuildRequestData("add", 3, 2);
+	std::cout << jsonRequest->GetData(); // this will output the json-rpc request string
+	
+	jsonRequest.reset(client.BuildRequestData("concat", "Hello, ", "World!"));
+	std::cout << jsonRequest->GetData();
 
-        jsonrpc::Request::Parameters params;
-        {
-            jsonrpc::Value::Array a;
-            a.emplace_back(1000);
-            a.emplace_back(std::numeric_limits<int32_t>::max());
-            params.push_back(std::move(a));
-        }
-		jsonRequest.reset(client.BuildRequestData("add_array", params));
-		std::cout << jsonRequest->GetData(); 
+	jsonrpc::Request::Parameters params;
+	{
+		jsonrpc::Value::Array a;
+		a.emplace_back(1000);
+		a.emplace_back(std::numeric_limits<int32_t>::max());
+		params.push_back(std::move(a));
+	}
+	jsonRequest.reset(client.BuildRequestData("add_array", params));
+	std::cout << jsonRequest->GetData(); 
 
-        params.clear();
-        {
-            jsonrpc::Value::Array a;
-            a.emplace_back(12);
-            a.emplace_back("foobar");
-            a.emplace_back(a);
-            params.push_back(std::move(a));
-        }
-		jsonRequest.reset(client.BuildRequestData("to_struct", params));
-		std::cout << jsonRequest->GetData(); 
+	params.clear();
+	{
+		jsonrpc::Value::Array a;
+		a.emplace_back(12);
+		a.emplace_back("foobar");
+		a.emplace_back(a);
+		params.push_back(std::move(a));
+	}
+	jsonRequest.reset(client.BuildRequestData("to_struct", params));
+	std::cout << jsonRequest->GetData(); 
 
     return 0;
 }

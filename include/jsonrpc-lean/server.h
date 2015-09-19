@@ -54,8 +54,8 @@ namespace jsonrpc {
         Dispatcher& GetDispatcher() { return myDispatcher; }
 
         // aContentType is here to allow future implementation of other rpc formats with minimal code changes
-        // this will only return false if no FormatHandler is found, otherwise will return true
-        bool HandleRequest(const std::string& aRequestData, std::string& aResponseBuffer, const std::string& aContentType = "application/json") {
+        // Will return NULL if no FormatHandler is found, otherwise will return a FormatedData
+        std::shared_ptr<jsonrpc::FormattedData> HandleRequest(const std::string& aRequestData, const std::string& aContentType = "application/json") {
 
             // first find the correct handler
             FormatHandler *fmtHandler = NULL;
@@ -67,7 +67,7 @@ namespace jsonrpc {
 
             if (fmtHandler == NULL) {
                 // not FormatHandler able to handle the request type was found
-                return false;
+                return NULL;
             }
             
             auto writer = fmtHandler->CreateWriter();
@@ -83,9 +83,7 @@ namespace jsonrpc {
                 Response(ex.GetCode(), ex.GetString(), Value()).Write(*writer);
             }
 
-            // TODO: get the buffer without an implicit copy operation
-            aResponseBuffer.assign(writer->GetData()->GetData(), writer->GetData()->GetSize());
-            return true;
+            return writer->GetData();
         }
     private:
         Dispatcher myDispatcher;

@@ -26,6 +26,7 @@
 #include <iostream>
 #include <numeric>
 #include <string>
+#include <memory>
 #include <stdint.h>
 
 class Math {
@@ -91,30 +92,30 @@ void RunServer() {
 	const char toBinaryRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_binary\",\"id\":3,\"params\":[\"Hello World!\"]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
 
-	std::string outputBuffer;
-	std::cout << "request: " << addRequest << std::endl;
-	server.HandleRequest(addRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
+    std::cout << "request: " << addRequest << std::endl;
+    outputFormatedData = server.HandleRequest(addRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
-	outputBuffer = "";
-	std::cout << "request: " << concatRequest << std::endl;
-	server.HandleRequest(concatRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+    outputFormatedData.reset();
+    std::cout << "request: " << concatRequest << std::endl;
+    outputFormatedData = server.HandleRequest(concatRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
-	outputBuffer = "";
-	std::cout << "request: " << addArrayRequest << std::endl;
-	server.HandleRequest(addArrayRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+    outputFormatedData.reset();
+    std::cout << "request: " << addArrayRequest << std::endl;
+    outputFormatedData = server.HandleRequest(addArrayRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
-	outputBuffer = "";
-	std::cout << "request: " << toBinaryRequest << std::endl;
-	server.HandleRequest(toBinaryRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+    outputFormatedData.reset();
+    std::cout << "request: " << toBinaryRequest << std::endl;
+    outputFormatedData = server.HandleRequest(toBinaryRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 
-	outputBuffer = "";
-	std::cout << "request: " << toStructRequest << std::endl;
-	server.HandleRequest(toStructRequest, outputBuffer);
-	std::cout << "response: " << outputBuffer << std::endl;
+    outputFormatedData.reset();
+    std::cout << "request: " << toStructRequest << std::endl;
+    outputFormatedData = server.HandleRequest(toStructRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
 }
 
 int main() {
