@@ -76,12 +76,12 @@ namespace {
 namespace jsonrpc {
     namespace util {
 
-        std::string FormatIso8601DateTime(const tm& dt) {
+        inline std::string FormatIso8601DateTime(const tm& dt) {
             char str[128];
             return std::string(str, strftime(str, sizeof(str), DATE_TIME_FORMAT, &dt));
         }
 
-        bool ParseIso8601DateTime(const char* text, tm& dt) {
+        inline bool ParseIso8601DateTime(const char* text, tm& dt) {
             if (!text) {
                 return false;
             }
@@ -96,9 +96,9 @@ namespace jsonrpc {
             return true;
         }
 
-        inline std::string Base64Encode(const std::string& data);
+        inline std::string Base64Encode(const std::string& data); // forward declaration
 
-        std::string Base64Encode(const char* data, size_t size) {
+        inline std::string Base64Encode(const char* data, size_t size) {
             const size_t lineLength = 76;
             static_assert(lineLength % 4 == 0, "invalid line length");
 
@@ -139,9 +139,9 @@ namespace jsonrpc {
             return str;
         }
 
-        inline std::string Base64Decode(const std::string& str);
+        inline std::string Base64Decode(const std::string& str); // forward declaration
 
-        std::string Base64Decode(const char* str, size_t size) {
+        inline std::string Base64Decode(const char* str, size_t size) {
             const size_t maxDecodedSize = 3 * ((size + 3) / 4);
 
             std::string data(maxDecodedSize, '\0');

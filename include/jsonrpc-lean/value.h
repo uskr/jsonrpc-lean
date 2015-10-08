@@ -374,7 +374,7 @@ namespace jsonrpc {
         return AsStruct().at(key);
     }
 
-    std::ostream& operator<<(std::ostream& os, const Value& value) {
+    inline std::ostream& operator<<(std::ostream& os, const Value& value) {
         switch (value.GetType()) {
         case Value::Type::ARRAY: {
             os << '[';
