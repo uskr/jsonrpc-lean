@@ -48,11 +48,11 @@ namespace jsonrpc {
         }
 
         std::unique_ptr<Reader> CreateReader(const std::string& data) override {
-            return std::unique_ptr<Reader>(new JsonReader(std::move(data)));
+            return std::unique_ptr<Reader>(std::make_unique<JsonReader>(std::move(data)));
         }
 
         std::unique_ptr<Writer> CreateWriter() override {
-            return std::unique_ptr<Writer>(new JsonWriter());
+            return std::unique_ptr<Writer>(std::make_unique<JsonWriter>());
         }
 
     private:

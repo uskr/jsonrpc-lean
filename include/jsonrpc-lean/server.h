@@ -59,16 +59,16 @@ namespace jsonrpc {
         std::shared_ptr<jsonrpc::FormattedData> HandleRequest(const std::string& aRequestData, const std::string& aContentType = "application/json") {
 
             // first find the correct handler
-            FormatHandler *fmtHandler = NULL;
+            FormatHandler *fmtHandler = nullptr;
             for (auto handler : myFormatHandlers) {
                 if (handler->CanHandleRequest(aContentType)) {
                     fmtHandler = handler;
                 }
             }
 
-            if (fmtHandler == NULL) {
-                // not FormatHandler able to handle the request type was found
-                return NULL;
+            if (fmtHandler == nullptr) {
+                // no FormatHandler able to handle this request type was found
+                return nullptr;
             }
             
             auto writer = fmtHandler->CreateWriter();

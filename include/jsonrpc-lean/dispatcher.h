@@ -59,10 +59,8 @@ namespace jsonrpc {
         const std::string& GetHelpText() const { return myHelpText; }
 
         template<typename... ParameterTypes>
-        MethodWrapper& AddSignature(Value::Type returnType,
-            ParameterTypes... parameterTypes) {
-            mySignatures.emplace_back(
-                std::initializer_list < Value::Type > {returnType, parameterTypes...});
+        MethodWrapper& AddSignature(Value::Type returnType, ParameterTypes... parameterTypes) {
+            mySignatures.emplace_back(std::initializer_list < Value::Type > {returnType, parameterTypes...});
             return *this;
         }
 
