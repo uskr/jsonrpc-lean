@@ -61,7 +61,7 @@ void LogCall(jsonrpc::Client& client, std::string method, T&&... args) {
         ++CallErrors;
         std::cout << "Error: " << fault.what();
     }
-    std::cout << "\n\n";
+    std::cout << "\n";
 }
 
 template<typename... T>
@@ -80,13 +80,24 @@ void LogNotificationCall(jsonrpc::Client& client, std::string method, T&&... arg
 }
 
 int main(int argc, char** argv) {
+
+	const char addResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":0,\"result\":5}";
+    const char concatResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"Hello, World!\"}";
+    const char addArrayResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":2147484647}";
+    const char toStructResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"0\":12,\"1\":\"foobar\",\"2\":[12,\"foobar\"]}}";	
+	
     std::unique_ptr<jsonrpc::FormatHandler> formatHandler(new jsonrpc::JsonFormatHandler());
 
     try {
         jsonrpc::Client client(*formatHandler);
 
         LogCall(client, "add", 3, 2);
+		jsonrpc::Response parsedResponse = client.ParseResponse(addResponse);
+        std::cout << "Parsed response: " << parsedResponse.GetResult().AsInteger32() << std::endl << std::endl;
+		
         LogCall(client, "concat", "Hello, ", "World!");
+		parsedResponse = client.ParseResponse(concatResponse);
+        std::cout << "Parsed response: " << parsedResponse.GetResult().AsString() << std::endl << std::endl;
 
         jsonrpc::Request::Parameters params;
         {
@@ -96,9 +107,11 @@ int main(int argc, char** argv) {
             params.push_back(std::move(a));
         }
         LogCall(client, "add_array", params);
+		parsedResponse = client.ParseResponse(addArrayResponse);
+        std::cout << "Parsed response: " << parsedResponse.GetResult().AsInteger64() << std::endl << std::endl;
 
-        LogCall(client, "to_binary", "Hello World!");
-        LogCall(client, "from_binary", jsonrpc::Value("Hi!", true));
+        LogCall(client, "to_binary", "Hello World!"); // once the result here is parsed, the underlying AsString can be just an array of bytes, not necessarily printable characters
+        LogCall(client, "from_binary", jsonrpc::Value("Hi!", true)); // "Hi!" can be an array of bytes, not necessarily printable characters
 		LogNotificationCall(client, "print_notification", "This is just a notification, no response expected!");
 
         params.clear();
@@ -110,6 +123,14 @@ int main(int argc, char** argv) {
             params.push_back(std::move(a));
         }
         LogCall(client, "to_struct", params);
+		parsedResponse = client.ParseResponse(toStructResponse);
+        auto structValue = parsedResponse.GetResult().AsStruct();
+
+        std::cout << "Parsed response: " << std::endl;
+        std::cout << "   0 : " << structValue["0"].AsInteger32() << std::endl;
+        std::cout << "   1 : " << structValue["1"].AsString() << std::endl;
+        std::cout << "   2 : [" << structValue["2"].AsArray()[0] << ", " << structValue["2"].AsArray()[1] << "]" << std::endl;
+        std::cout << std::endl;
 
         params.clear();
         {

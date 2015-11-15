@@ -107,14 +107,24 @@ A client capable of generating requests for the server above could look like thi
 #include "jsonrpc-lean/client.h"
 
 int main(int argc, char** argv) {
+
+	const char addResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":0,\"result\":5}";
+    const char concatResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"Hello, World!\"}";
+    const char addArrayResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":2147484647}";
+    const char toStructResponse[] = "{\"jsonrpc\":\"2.0\",\"id\":4,\"result\":{\"0\":12,\"1\":\"foobar\",\"2\":[12,\"foobar\"]}}";
+
     std::unique_ptr<jsonrpc::FormatHandler> formatHandler(new jsonrpc::JsonFormatHandler());
 	jsonrpc::Client client(*formatHandler);
 
 	std::shared_ptr<FormattedData> jsonRequest = client.BuildRequestData("add", 3, 2);
 	std::cout << jsonRequest->GetData(); // this will output the json-rpc request string
+	jsonrpc::Response parsedResponse = client.ParseResponse(addResponse);
+    std::cout << "Parsed response: " << parsedResponse.GetResult().AsInteger32() << std::endl << std::endl;
 	
 	jsonRequest.reset(client.BuildRequestData("concat", "Hello, ", "World!"));
 	std::cout << jsonRequest->GetData();
+	parsedResponse = client.ParseResponse(concatResponse);
+        std::cout << "Parsed response: " << parsedResponse.GetResult().AsString() << std::endl << std::endl;
 
 	jsonrpc::Request::Parameters params;
 	{
@@ -125,6 +135,8 @@ int main(int argc, char** argv) {
 	}
 	jsonRequest.reset(client.BuildRequestData("add_array", params));
 	std::cout << jsonRequest->GetData(); 
+	parsedResponse = client.ParseResponse(addArrayResponse);
+    std::cout << "Parsed response: " << parsedResponse.GetResult().AsInteger64() << std::endl << std::endl;
 
 	params.clear();
 	{
@@ -136,8 +148,14 @@ int main(int argc, char** argv) {
 	}
 	jsonRequest.reset(client.BuildRequestData("to_struct", params));
 	std::cout << jsonRequest->GetData(); 
+	parsedResponse = client.ParseResponse(toStructResponse);
+	auto structValue = parsedResponse.GetResult().AsStruct();
+	std::cout << "Parsed response: " << std::endl;
+	std::cout << "   0 : " << structValue["0"].AsInteger32() << std::endl;
+	std::cout << "   1 : " << structValue["1"].AsString() << std::endl;
+	std::cout << "   2 : [" << structValue["2"].AsArray()[0] << ", " << structValue["2"].AsArray()[1] << "]" << std::endl;
 	
-	jsonRequest.reset(client.BuildRequestData("print_notification", "This is just a notification, no response expected!"));
+	jsonRequest.reset(client.BuildNotificationData("print_notification", "This is just a notification, no response expected!"));
 	std::cout << jsonRequest->GetData();
 
     return 0;
