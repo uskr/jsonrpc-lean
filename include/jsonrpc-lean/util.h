@@ -21,7 +21,7 @@
 #define JSONRPC_LEAN_UTIL_H
 
 #include <stdint.h>
-#include <string>
+#include <string.h>
 #include <cassert>
 #include <ctime>
 #include <sstream>
