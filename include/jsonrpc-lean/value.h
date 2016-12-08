@@ -93,7 +93,7 @@ namespace jsonrpc {
             as.myStruct = new Struct(std::move(value));
         }
 
-        Value::~Value() {
+        ~Value() {
             Reset();
         }
 
