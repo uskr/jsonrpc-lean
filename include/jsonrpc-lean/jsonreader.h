@@ -31,7 +31,7 @@
 #define RAPIDJSON_NO_SIZETYPEDEFINE
 namespace rapidjson { typedef ::std::size_t SizeType; }
 
-#include <rapidjson/document.h>
+#include <../rapidjson/document.h>
 #include <string>
 
 namespace jsonrpc {
