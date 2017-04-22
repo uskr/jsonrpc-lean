@@ -1,7 +1,7 @@
 
 # jsonrpc-lean
 
-An [LGPL](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) licensed, client/server, transport-agnostic, JSON-RPC library for C++11.
+An [LGPL](http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) licensed, client/server, transport-agnostic, JSON-RPC library for C++14.
 
 The initial jsonrpc-lean implementation is derived from xsonrpc (https://github.com/erijo/xsonrpc) by Erik Johansson (https://github.com/erijo/). Much thanks to him for doing all the heavy work.
 
@@ -166,6 +166,14 @@ int main(int argc, char** argv) {
 
 To use jsonrpc-lean on your project, all you need is:
 
-* A C++11 capable compiler (GCC 5.0+ (Linux), XCode/Clang (OSX 10.7+), MSVC 14.0+ (Visual Studio 2015))
+* A C++14 capable compiler (GCC 5.0+ (Linux), XCode/Clang (OSX 10.7+), MSVC 14.0+ (Visual Studio 2015))
 * [rapidjson](https://github.com/miloyip/rapidjson) (Only need the include folder on your include path, don't worry about compiling it)
 
+## Example Compile
+
+```bash
+#server
+ g++-5 examples/testserver.cpp -std=c++14 -o server 
+#client
+ g++-5 examples/testclient.cpp -std=c++14 -o client 
+```
