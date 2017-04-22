@@ -2,7 +2,7 @@
 
 ### internal files
 internal/
-
+!include/rapidjson/internal/
 ### Xcode ###
 # Xcode
 #
