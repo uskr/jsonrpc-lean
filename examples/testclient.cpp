@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with this library; if not, write to the Free Software Foundation,
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-
+#define __USE_MINGW_ANSI_STDIO 0
 #include "../include/jsonrpc-lean/client.h"
 #include "../include/jsonrpc-lean/fault.h"
 #include "../include/jsonrpc-lean/jsonformathandler.h"
