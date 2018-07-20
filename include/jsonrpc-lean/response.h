@@ -9,6 +9,9 @@
 
 #include "value.h"
 
+#define BOOST_THREAD_VERSION 4
+#include <boost/thread/future.hpp>
+
 namespace jsonrpc {
 
     class Writer;
@@ -40,6 +43,43 @@ namespace jsonrpc {
             }
             writer.EndDocument();
         }
+		  
+		  boost::future<void> asyncWrite(std::function<std::unique_ptr<Writer> ()> createWriter) const 
+		  {
+            if (myIsFault) 
+				{
+					auto writer = createWriter();
+					writer->StartDocument();
+                writer->StartFaultResponse(myId);
+                writer.WriteFault(myFaultCode, myFaultString);
+                writer.EndFaultResponse();
+					 writer.EndDocument();
+					 return boost::make_ready_future<void>();
+            }
+				
+				// TODO: COMPLETEME
+				//writer.StartResponse(myId);
+				
+				if (myResult.IsFuture())
+				{
+					return myResult.AsFuture()
+						.then([](boost::future<Value> futureResult)
+						{
+							Value result = futureResult.get();
+							auto writer = createWriter();
+							
+							
+							
+							
+							return;
+						});
+				}
+				
+				myResult.Write(writer);
+				writer.EndResponse();
+            writer.EndDocument();
+				return boost::make_ready_future<void>();
+		  }
 
         Value& GetResult() { return myResult; }
         bool IsFault() const { return myIsFault; }

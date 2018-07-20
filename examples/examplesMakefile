@@ -1,0 +1,103 @@
+## -*- Makefile -*-
+##
+## User: semmel
+## Time: Jul 20, 2018 5:00:41 PM
+## Makefile created by Oracle Developer Studio.
+##
+## This file is generated automatically.
+##
+
+
+#### Compiler and tool definitions shared by all build targets #####
+CCC = g++
+CXX = g++
+BASICOPTS = -g -std=gnu++14
+CCFLAGS = $(BASICOPTS)  "-Wno-parentheses"
+CXXFLAGS = $(BASICOPTS)  "-Wno-parentheses"
+CCADMIN = 
+
+
+# Define the target directories.
+TARGETDIR_testserver=GNU-amd64-Linux
+TARGETDIR_testclient=GNU-amd64-Linux
+
+
+all: $(TARGETDIR_testserver)/testserver $(TARGETDIR_testclient)/testclient
+
+## Target: testserver
+CPPFLAGS_testserver = \
+	-I../include \
+	-I../../../../boost_1_67_0 \
+	-I../../../../rapidjson/include
+OBJS_testserver =  \
+	$(TARGETDIR_testserver)/testserver.o
+USERLIBS_testserver = $(SYSLIBS_testserver) 
+DEPLIBS_testserver =  
+LDLIBS_testserver = $(USERLIBS_testserver)
+
+
+# Link or archive
+$(TARGETDIR_testserver)/testserver: $(TARGETDIR_testserver) $(OBJS_testserver) $(DEPLIBS_testserver)
+	$(LINK.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ $(OBJS_testserver) $(LDLIBS_testserver)
+
+
+# Compile source files into .o files
+$(TARGETDIR_testserver)/testserver.o: $(TARGETDIR_testserver) testserver.cpp
+	$(COMPILE.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ testserver.cpp
+
+$(TARGETDIR_testserver)/base64.o: $(TARGETDIR_testserver) base64.cpp
+	$(COMPILE.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ base64.cpp
+
+
+
+## Target: testclient
+CPPFLAGS_testclient = \
+	-I../include \
+	-I../../../../boost_1_67_0 \
+	-I../../../../rapidjson/include
+OBJS_testclient =  \
+	$(TARGETDIR_testclient)/testclient.o
+USERLIBS_testclient = $(SYSLIBS_testclient) 
+DEPLIBS_testclient =  
+LDLIBS_testclient = $(USERLIBS_testclient)
+
+
+# Link or archive
+$(TARGETDIR_testclient)/testclient: $(TARGETDIR_testclient) $(OBJS_testclient) $(DEPLIBS_testclient)
+	$(LINK.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ $(OBJS_testclient) $(LDLIBS_testclient)
+
+
+# Compile source files into .o files
+$(TARGETDIR_testclient)/base64.o: $(TARGETDIR_testclient) base64.cpp
+	$(COMPILE.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ base64.cpp
+
+$(TARGETDIR_testclient)/testclient.o: $(TARGETDIR_testclient) testclient.cpp
+	$(COMPILE.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ testclient.cpp
+
+
+
+#### Clean target deletes all generated files ####
+clean:
+	rm -f \
+		$(TARGETDIR_testserver)/testserver \
+		$(TARGETDIR_testserver)/testserver.o \
+		$(TARGETDIR_testserver)/base64.o \
+		$(TARGETDIR_testclient)/testclient \
+		$(TARGETDIR_testclient)/base64.o \
+		$(TARGETDIR_testclient)/testclient.o
+	$(CCADMIN)
+	rm -f -r $(TARGETDIR_testserver)
+	rm -f -r $(TARGETDIR_testclient)
+
+
+# Create the target directory (if needed)
+$(TARGETDIR_testserver):
+	mkdir -p $(TARGETDIR_testserver)
+$(TARGETDIR_testclient):
+	mkdir -p $(TARGETDIR_testclient)
+
+
+# Enable dependency checking
+.KEEP_STATE:
+.KEEP_STATE_FILE:.make.state.GNU-amd64-Linux
+

@@ -15,6 +15,9 @@
 #include <vector>
 #include <ostream>
 
+#define BOOST_THREAD_VERSION 4
+#include <boost/thread/future.hpp>
+
 #include "util.h"
 #include "fault.h"
 #include "writer.h"
@@ -29,6 +32,7 @@ namespace jsonrpc {
         typedef tm DateTime;
         typedef std::string String;
         typedef std::map<std::string, Value> Struct;
+		  typedef boost::future<Value> Future;
 
         enum class Type {
             ARRAY,
@@ -40,7 +44,8 @@ namespace jsonrpc {
             INTEGER_64,
             NIL,
             STRING,
-            STRUCT
+            STRUCT,
+				FUTURE
         };
 
         Value() : myType(Type::NIL) {}
@@ -159,6 +164,7 @@ namespace jsonrpc {
         bool IsNil() const { return myType == Type::NIL; }
         bool IsString() const { return myType == Type::STRING; }
         bool IsStruct() const { return myType == Type::STRUCT; }
+		  bool IsFuture() const { return myType == Type::FUTURE; }
 
         const Array& AsArray() const {
             if (IsArray()) {
@@ -217,6 +223,13 @@ namespace jsonrpc {
         const Struct& AsStruct() const {
             if (IsStruct()) {
                 return *as.myStruct;
+            }
+            throw InvalidParametersFault();
+        }
+		  
+		  const Future& AsFuture() const {
+            if (IsFuture()) {
+                return *as.myFuture;
             }
             throw InvalidParametersFault();
         }
@@ -309,6 +322,7 @@ namespace jsonrpc {
             DateTime* myDateTime;
             String* myString;
             Struct* myStruct;
+				Future* myFuture;
             struct {
                 double myDouble;
                 int32_t myInteger32;

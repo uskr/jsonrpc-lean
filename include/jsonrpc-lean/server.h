@@ -22,6 +22,9 @@
 
 #include <string>
 
+#define BOOST_THREAD_VERSION 4
+#include <boost/thread/future.hpp>
+
 namespace jsonrpc {
 
     class Server {
@@ -76,6 +79,41 @@ namespace jsonrpc {
 
             return writer->GetData();
         }
+		  
+		  boost::future<jsonrpc::FormattedData> asyncHandleRequest(const std::string& aRequestData, const std::string& aContentType = "application/json")
+		  {
+			  // first find the correct handler
+            FormatHandler *fmtHandler = nullptr;
+            for (auto handler : myFormatHandlers) {
+                if (handler->CanHandleRequest(aContentType)) {
+                    fmtHandler = handler;
+                }
+            }
+
+            if (fmtHandler == nullptr) {
+                // no FormatHandler able to handle this request type was found
+                return nullptr;
+            }
+            
+            auto writer = fmtHandler->CreateWriter();
+
+            try {
+                auto reader = fmtHandler->CreateReader(aRequestData);
+                Request request = reader->GetRequest();
+                reader.reset();
+
+                auto response = myDispatcher.Invoke(request.GetMethodName(), request.GetParameters(), request.GetId());
+					 
+					 // if Id is false, this is a notification and we don't have to write a response
+                if (!response.GetId().IsBoolean() || response.GetId().AsBoolean() != false) 
+					 {
+						 return response.asyncWrite(std::bind(&FormatHandler::CreateWriter, &fmtHandler));
+                }
+            } catch (const Fault& ex) {
+					Response(ex.GetCode(), ex.GetString(), Value()).Write(*writer);
+					return boost::make_ready_future(writer->GetData());
+            }
+		  }
     private:
         Dispatcher myDispatcher;
         std::vector<FormatHandler*> myFormatHandlers;
