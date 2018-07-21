@@ -15,6 +15,8 @@
 namespace jsonrpc {
 
     class Writer;
+	 
+	 typedef std::unique_ptr<Writer> WriterPtr;
 
     class Response {
     public:
@@ -44,41 +46,54 @@ namespace jsonrpc {
             writer.EndDocument();
         }
 		  
-		  boost::future<void> asyncWrite(std::function<std::unique_ptr<Writer> ()> createWriter) const 
+		  boost::future<WriterPtr> asyncWrite(WriterPtr writer) const 
 		  {
+			  writer->StartDocument();
+			  
             if (myIsFault) 
-				{
-					auto writer = createWriter();
-					writer->StartDocument();
+				{	
                 writer->StartFaultResponse(myId);
-                writer.WriteFault(myFaultCode, myFaultString);
-                writer.EndFaultResponse();
-					 writer.EndDocument();
-					 return boost::make_ready_future<void>();
+                writer->WriteFault(myFaultCode, myFaultString);
+                writer->EndFaultResponse();
+					 writer->EndDocument();
+					 return boost::make_ready_future<WriterPtr>(writer);
             }
-				
-				// TODO: COMPLETEME
-				//writer.StartResponse(myId);
 				
 				if (myResult.IsFuture())
 				{
 					return myResult.AsFuture()
-						.then([](boost::future<Value> futureResult)
+						.then([writer = std::move(writer), myId = myId](boost::future<Value> futureResult)
 						{
-							Value result = futureResult.get();
-							auto writer = createWriter();
+							try
+							{
+								Value result = futureResult.get();
+								
+								writer.StartResponse(myId);
+								result.Write(writer);
+								writer.EndResponse();
+							}
+							catch (const std::exception& ex) 
+							{
+								writer->StartFaultResponse(myId);
+								writer->WriteFault(0, ex.what());
+								writer->EndFaultResponse();
+						   }
+						   catch (...) {
+								writer->StartFaultResponse(myId);
+								writer->WriteFault(0, "unknown error");
+								writer->EndFaultResponse();
+						   }
 							
+							 writer->EndDocument();
 							
-							
-							
-							return;
+							return writer;
 						});
 				}
 				
 				myResult.Write(writer);
 				writer.EndResponse();
             writer.EndDocument();
-				return boost::make_ready_future<void>();
+				return boost::make_ready_future<WriterPtr>(writer);
 		  }
 
         Value& GetResult() { return myResult; }

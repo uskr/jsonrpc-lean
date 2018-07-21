@@ -32,7 +32,7 @@ namespace jsonrpc {
         typedef tm DateTime;
         typedef std::string String;
         typedef std::map<std::string, Value> Struct;
-		  typedef boost::future<Value> Future;
+		  typedef boost::shared_future<Value> Future;
 
         enum class Type {
             ARRAY,
@@ -84,6 +84,10 @@ namespace jsonrpc {
         Value(Struct value) : myType(Type::STRUCT) {
             as.myStruct = new Struct(std::move(value));
         }
+		  
+		  Value(Future value) : myType(Type::FUTURE) {
+            as.myFuture = value;
+        }
 
         ~Value() {
             Reset();
@@ -132,6 +136,9 @@ namespace jsonrpc {
                 break;
             case Type::STRUCT:
                 as.myStruct = new Struct(other.AsStruct());
+                break;
+				case Type::FUTURE:
+                as.myFuture = other.AsFuture();
                 break;
             }
         }
@@ -229,7 +236,7 @@ namespace jsonrpc {
 		  
 		  const Future& AsFuture() const {
             if (IsFuture()) {
-                return *as.myFuture;
+                return as.myFuture;
             }
             throw InvalidParametersFault();
         }
@@ -281,6 +288,8 @@ namespace jsonrpc {
                 }
                 writer.EndStruct();
                 break;
+				case Type::FUTURE:
+					throw std::runtime_exception("Future of a result cannot be written");
             }
         }
 
@@ -303,6 +312,10 @@ namespace jsonrpc {
             case Type::STRUCT:
                 delete as.myStruct;
                 break;
+					 
+					case Type::FUTURE:
+						// TODO Maybe better store a smart pointer of the future which can be reset here!!
+						break;
 
             case Type::BOOLEAN:
             case Type::DOUBLE:
@@ -322,7 +335,7 @@ namespace jsonrpc {
             DateTime* myDateTime;
             String* myString;
             Struct* myStruct;
-				Future* myFuture;
+				Future myFuture;
             struct {
                 double myDouble;
                 int32_t myInteger32;
