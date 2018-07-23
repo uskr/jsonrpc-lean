@@ -27,8 +27,6 @@
 
 namespace jsonrpc {
 	
-	typedef std::shared_ptr<jsonrpc::FormattedData> FormattedDataPtr;
-
     class Server {
     public:
         Server() {}
@@ -94,7 +92,7 @@ namespace jsonrpc {
 
             if (fmtHandler == nullptr) {
                 // no FormatHandler able to handle this request type was found
-                return boost::make_ready_future(nullptr);
+                return boost::make_ready_future(std::shared_ptr<FormattedData>(new jsonrpc::JsonFormattedData()));
             }
             
             std::unique_ptr<Writer> writer = fmtHandler->CreateWriter();
@@ -111,11 +109,7 @@ namespace jsonrpc {
                 if (!response.GetId().IsBoolean() || response.GetId().AsBoolean() != false) 
 					 {
 						 // here we return the future of the response outcome processed by the writer
-						 return response.asyncWrite(std::move(writer))
-							 .then(boost::launch::defer, [](boost::future<std::unique_ptr<Writer> writer)
-							 {
-								 return writer->GetData();
-							 });
+						 return response.asyncWrite(std::move(writer));
                 }
 					 
 					 return boost::make_ready_future(writer->GetData());

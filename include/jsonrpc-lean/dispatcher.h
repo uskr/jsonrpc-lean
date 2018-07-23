@@ -24,6 +24,9 @@
 #include <utility>
 #include <vector>
 
+#define BOOST_THREAD_VERSION 4
+#include <boost/thread/future.hpp>
+
 namespace jsonrpc {
 
     class MethodWrapper {
@@ -159,6 +162,25 @@ namespace jsonrpc {
             std::function<ReturnType(ParameterTypes...)> function = [&instance, method](ParameterTypes&&... params) -> ReturnType {
                 return (instance.*method)(std::forward<ParameterTypes>(params)...);
             };
+            return AddMethodInternal(std::move(name), std::move(function));
+        }
+		  
+		  // this is a test if we can drop Value from the returned future type
+		  template<typename ReturnType, typename T, typename... ParameterTypes>
+        MethodWrapper& AddMethod(std::string name, boost::future<ReturnType>(T::*method)(ParameterTypes...) const, 
+		  T& instance) 
+		  {
+			  std::function<boost::shared_future<jsonrpc::Value>(ParameterTypes...)> function = 
+				  [&instance, method](ParameterTypes&&... params) -> boost::shared_future<jsonrpc::Value> 
+				  {
+                return (instance.*method)(std::forward<ParameterTypes>(params)...)
+						 .then([](boost::future<ReturnType> f)
+						 {
+							 return jsonrpc::Value(f.get());
+						 })
+						 .share();
+					};
+					
             return AddMethodInternal(std::move(name), std::move(function));
         }
 

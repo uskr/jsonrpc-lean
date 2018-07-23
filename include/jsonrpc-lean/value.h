@@ -32,7 +32,7 @@ namespace jsonrpc {
         typedef tm DateTime;
         typedef std::string String;
         typedef std::map<std::string, Value> Struct;
-		  typedef boost::shared_future<Value> Future;
+		  typedef boost::shared_future<Value> SharedFuture;
 
         enum class Type {
             ARRAY,
@@ -85,8 +85,8 @@ namespace jsonrpc {
             as.myStruct = new Struct(std::move(value));
         }
 		  
-		  Value(Future value) : myType(Type::FUTURE) {
-            as.myFuture = value;
+		  Value(SharedFuture value) : myType(Type::FUTURE) {
+			  as.myFuture = new SharedFuture(value);
         }
 
         ~Value() {
@@ -138,7 +138,7 @@ namespace jsonrpc {
                 as.myStruct = new Struct(other.AsStruct());
                 break;
 				case Type::FUTURE:
-                as.myFuture = other.AsFuture();
+                as.myFuture = new SharedFuture(other.AsFuture());
                 break;
             }
         }
@@ -234,15 +234,18 @@ namespace jsonrpc {
             throw InvalidParametersFault();
         }
 		  
-		  const Future& AsFuture() const {
+		  SharedFuture& AsFuture() const {
             if (IsFuture()) {
-                return as.myFuture;
+                return *as.myFuture;
             }
             throw InvalidParametersFault();
         }
 
         template<typename T>
         inline const T& AsType() const;
+		  
+		  template<typename T>
+        inline T& AsType();
 
         Type GetType() const { return myType; }
 
@@ -289,7 +292,7 @@ namespace jsonrpc {
                 writer.EndStruct();
                 break;
 				case Type::FUTURE:
-					throw std::runtime_exception("Future of a result cannot be written");
+					throw std::runtime_error("Future of a result cannot be written");
             }
         }
 
@@ -313,9 +316,9 @@ namespace jsonrpc {
                 delete as.myStruct;
                 break;
 					 
-					case Type::FUTURE:
-						// TODO Maybe better store a smart pointer of the future which can be reset here!!
-						break;
+				case Type::FUTURE:
+					delete as.myFuture;
+					break;
 
             case Type::BOOLEAN:
             case Type::DOUBLE:
@@ -335,7 +338,7 @@ namespace jsonrpc {
             DateTime* myDateTime;
             String* myString;
             Struct* myStruct;
-				Future myFuture;
+				SharedFuture* myFuture;
             struct {
                 double myDouble;
                 int32_t myInteger32;
@@ -374,6 +377,10 @@ namespace jsonrpc {
 
     template<> inline const Value::Struct& Value::AsType<typename Value::Struct>() const {
         return AsStruct();
+    }
+	 
+	  template<> inline Value::SharedFuture& Value::AsType<typename Value::SharedFuture>() {
+        return AsFuture();
     }
 
     template<> inline const Value& Value::AsType<Value>() const {
@@ -438,6 +445,9 @@ namespace jsonrpc {
             os << '}';
             break;
         }
+		  case Value::Type::FUTURE:
+            os << "<future>";
+            break;
         }
         return os;
     }

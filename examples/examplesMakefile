@@ -28,17 +28,22 @@ all: $(TARGETDIR_testserver)/testserver $(TARGETDIR_testclient)/testclient
 CPPFLAGS_testserver = \
 	-I../include \
 	-I../../../../boost_1_67_0 \
-	-I../../../../rapidjson/include
+	-I../../../../rapidjson/include \
+	-DBOOST_CHRONO_HEADER_ONLY
 OBJS_testserver =  \
 	$(TARGETDIR_testserver)/testserver.o
+USERLIBS_testserver = 
 USERLIBS_testserver = $(SYSLIBS_testserver) 
 DEPLIBS_testserver =  
 LDLIBS_testserver = $(USERLIBS_testserver)
 
+LDLIBS := boost_system
+LDLIBS += boost_filesystem
+
 
 # Link or archive
 $(TARGETDIR_testserver)/testserver: $(TARGETDIR_testserver) $(OBJS_testserver) $(DEPLIBS_testserver)
-	$(LINK.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ $(OBJS_testserver) $(LDLIBS_testserver)
+	$(LINK.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ $(OBJS_testserver) -L../../../../boost_1_67_0/stage/lib -lboost_system -lboost_filesystem -lpthread -lboost_thread
 
 
 # Compile source files into .o files
@@ -92,7 +97,11 @@ clean:
 
 # Create the target directory (if needed)
 $(TARGETDIR_testserver):
-	mkdir -p $(TARGETDIR_testserver)
+	mkdir -p $(TARGETDIR_testserver) \
+	cd $(TARGETDIR_testserver) \
+	ln -s ../../../../../boost_1_67_0/stage/lib/libboost_system.so.1.67.0  libboost_system.so.1.67.0 \
+	ln -s ../../../../../boost_1_67_0/stage/lib/libboost_filesystem.so.1.67.0  libboost_filesystem.so.1.67.0
+
 $(TARGETDIR_testclient):
 	mkdir -p $(TARGETDIR_testclient)
 

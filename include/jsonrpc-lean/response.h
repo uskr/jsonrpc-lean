@@ -17,6 +17,7 @@ namespace jsonrpc {
     class Writer;
 	 
 	 typedef std::unique_ptr<Writer> WriterPtr;
+	 typedef std::shared_ptr<FormattedData> FormattedDataPtr;
 
     class Response {
     public:
@@ -46,7 +47,7 @@ namespace jsonrpc {
             writer.EndDocument();
         }
 		  
-		  boost::future<WriterPtr> asyncWrite(WriterPtr writer) const 
+		  boost::future<FormattedDataPtr> asyncWrite(WriterPtr writer) const 
 		  {
 			  writer->StartDocument();
 			  
@@ -56,21 +57,23 @@ namespace jsonrpc {
                 writer->WriteFault(myFaultCode, myFaultString);
                 writer->EndFaultResponse();
 					 writer->EndDocument();
-					 return boost::make_ready_future<WriterPtr>(writer);
+					 return boost::make_ready_future(writer->GetData());
             }
 				
 				if (myResult.IsFuture())
 				{
+					Value requestId(myId);
+					
 					return myResult.AsFuture()
-						.then([writer = std::move(writer), myId = myId](boost::future<Value> futureResult)
+						.then([writer = std::move(writer), myId = std::move(requestId)](boost::shared_future<Value> futureResult)
 						{
 							try
 							{
-								Value result = futureResult.get();
+								const Value& result = futureResult.get();
 								
-								writer.StartResponse(myId);
-								result.Write(writer);
-								writer.EndResponse();
+								writer->StartResponse(myId);
+								result.Write(*writer);
+								writer->EndResponse();
 							}
 							catch (const std::exception& ex) 
 							{
@@ -86,14 +89,14 @@ namespace jsonrpc {
 							
 							 writer->EndDocument();
 							
-							return writer;
+							return writer->GetData();
 						});
 				}
 				
-				myResult.Write(writer);
-				writer.EndResponse();
-            writer.EndDocument();
-				return boost::make_ready_future<WriterPtr>(writer);
+				myResult.Write(*writer);
+				writer->EndResponse();
+            writer->EndDocument();
+				return boost::make_ready_future(writer->GetData());
 		  }
 
         Value& GetResult() { return myResult; }

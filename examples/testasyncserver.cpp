@@ -31,23 +31,10 @@
 #include <memory>
 #include <stdint.h>
 
-#define BOOST_THREAD_VERSION 4
-#include <boost/thread/future.hpp>
-
 class Math {
 public:
-	int Add(int a, int b) const {
+	int Add(int a, int b) {
 		return a + b;
-	}
-	
-	boost::future<int> AsyncAddInt(int a, int b) const {
-		return boost::async([=](){
-			return a + b;
-		});
-	}
-	
-	boost::future<int> AsyncAdd(int a, int b) const {
-		return boost::async(&Math::Add, this, a, b);
 	}
 
 	int64_t AddArray(const jsonrpc::Value::Array& a) {
@@ -114,7 +101,6 @@ void RunServer() {
 	const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
 
 	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
-	
     std::cout << "request: " << addRequest << std::endl;
     outputFormatedData = server.HandleRequest(addRequest);
     std::cout << "response: " << outputFormatedData->GetData() << std::endl;
@@ -143,26 +129,6 @@ void RunServer() {
     std::cout << "request: " << printNotificationRequest << std::endl;
     outputFormatedData = server.HandleRequest(printNotificationRequest);
     std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
-	 
-	 dispatcher.AddMethod("async_add", &Math::AsyncAdd, math);
-	 const char addAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add\",\"id\":0,\"params\":[30,20]}";
-	 
-	 std::cout << "request: " << addAsyncRequest << std::endl;
-    server.asyncHandleRequest(addAsyncRequest)
-	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
-		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
-	});
-		 
-    dispatcher.AddMethod("async_add_int", &Math::AsyncAddInt, math);
-	 const char addIntAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add_int\",\"id\":0,\"params\":[300,200]}";
-	 std::cout << "request: " << addIntAsyncRequest << std::endl;
-	 
-    server.asyncHandleRequest(addIntAsyncRequest)
-	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
-		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
-	});
-	 
-	 boost::this_thread::sleep_for(boost::chrono::seconds(2));
 }
 
 int main() {
