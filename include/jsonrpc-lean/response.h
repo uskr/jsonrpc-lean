@@ -93,6 +93,7 @@ namespace jsonrpc {
 						});
 				}
 				
+				writer->StartResponse(myId);
 				myResult.Write(*writer);
 				writer->EndResponse();
             writer->EndDocument();

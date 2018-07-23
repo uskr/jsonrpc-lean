@@ -118,6 +118,14 @@ void RunServer() {
     std::cout << "request: " << addRequest << std::endl;
     outputFormatedData = server.HandleRequest(addRequest);
     std::cout << "response: " << outputFormatedData->GetData() << std::endl;
+	 
+	 std::cout << "test async wrapper around sync request: " << addRequest << std::endl;
+    server.asyncHandleRequest(addRequest)
+	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr)
+	{
+		 std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
+	});
+   
 
     outputFormatedData.reset();
     std::cout << "request: " << concatRequest << std::endl;
@@ -145,7 +153,7 @@ void RunServer() {
     std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
 	 
 	 dispatcher.AddMethod("async_add", &Math::AsyncAdd, math);
-	 const char addAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add\",\"id\":0,\"params\":[30,20]}";
+	 const char addAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add\",\"id\":10,\"params\":[30,20]}";
 	 
 	 std::cout << "request: " << addAsyncRequest << std::endl;
     server.asyncHandleRequest(addAsyncRequest)
@@ -154,7 +162,7 @@ void RunServer() {
 	});
 		 
     dispatcher.AddMethod("async_add_int", &Math::AsyncAddInt, math);
-	 const char addIntAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add_int\",\"id\":0,\"params\":[300,200]}";
+	 const char addIntAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add_int\",\"id\":11,\"params\":[300,200]}";
 	 std::cout << "request: " << addIntAsyncRequest << std::endl;
 	 
     server.asyncHandleRequest(addIntAsyncRequest)
