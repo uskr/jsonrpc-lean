@@ -40,7 +40,7 @@ public:
 		return a + b;
 	}
 
-   boost::future<int> AsyncAddInt(int a, int b) const {
+	boost::future<int> AsyncAddInt(int a, int b) const {
 		return boost::async([](auto a, auto b){
 			return a + b;
 		}, a, b);
@@ -69,79 +69,79 @@ void PrintNotification(const std::string& a) {
 }
 
 int main() {
-	Math math;
-	jsonrpc::Server server;
-	
-	jsonrpc::JsonFormatHandler jsonFormatHandler;
-	server.RegisterFormatHandler(jsonFormatHandler);
+   Math math;
+   jsonrpc::Server server;
 
-	auto& dispatcher = server.GetDispatcher();
-	// if it is a member method, you must use this 3 parameter version, passing an instance of an object that implements it
-	dispatcher.AddMethod("add", &Math::Add, math);
+   jsonrpc::JsonFormatHandler jsonFormatHandler;
+   server.RegisterFormatHandler(jsonFormatHandler);
+
+   auto& dispatcher = server.GetDispatcher();
+   // if it is a member method, you must use this 3 parameter version, passing an instance of an object that implements it
+   dispatcher.AddMethod("add", &Math::Add, math);
    dispatcher.AddMethod("async_add_int", &Math::AsyncAddInt, math)
-	dispatcher.AddMethod("add_array", &Math::AddArray, math); 
-	
-	// if it is just a regular function (non-member or static), you can you the 2 parameter AddMethod
-	dispatcher.AddMethod("concat", &Concat);
-	dispatcher.AddMethod("to_struct", &ToStruct);
-	dispatcher.AddMethod("print_notification", &PrintNotification);
+   dispatcher.AddMethod("add_array", &Math::AddArray, math); 
+
+   // if it is just a regular function (non-member or static), you can you the 2 parameter AddMethod
+   dispatcher.AddMethod("concat", &Concat);
+   dispatcher.AddMethod("to_struct", &ToStruct);
+   dispatcher.AddMethod("print_notification", &PrintNotification);
 
    std::function<boost::future<std::string>(std::string)> sReverse = [](std::string in) -> boost::future<std::string> { 
-         std::string res;
-         return boost::make_ready_future(res.assign(in.rbegin(), in.rend())); 
-      };
-	dispatcher.AddAsyncLambda("async_reverse", sReverse);
+      std::string res;
+      return boost::make_ready_future(res.assign(in.rbegin(), in.rend())); 
+   };
+   dispatcher.AddAsyncLambda("async_reverse", sReverse);
 
-	// on a real world, these requests come from your own transport implementation (sockets, http, ipc, named-pipes, etc)
-	const char addRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"id\":0,\"params\":[3,2]}";
-	const char addIntAsyncRequest[] = R"({"jsonrpc":"2.0","method":"async_add_int","id":11,"params":[300,200]})";
-	const char concatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":1,\"params\":[\"Hello, \",\"World!\"]}";
-	const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
-	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
-	const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
+   // on a real world, these requests come from your own transport implementation (sockets, http, ipc, named-pipes, etc)
+   const char addRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"id\":0,\"params\":[3,2]}";
+   const char addIntAsyncRequest[] = R"({"jsonrpc":"2.0","method":"async_add_int","id":11,"params":[300,200]})";
+   const char concatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":1,\"params\":[\"Hello, \",\"World!\"]}";
+   const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
+   const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
+   const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
    const char asyncReverseRequest[] = R"({"jsonrpc":"2.0","method":"async_reverse","id":13,"params":["xyz"]})";
 
-	std::shared_ptr<jsonrpc::FormattedData> outputFormattedData;
-    std::cout << "request: " << addRequest << std::endl;
-    outputFormattedData = server.HandleRequest(addRequest);
-    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
+   std::shared_ptr<jsonrpc::FormattedData> outputFormattedData;
+   std::cout << "request: " << addRequest << std::endl;
+   outputFormattedData = server.HandleRequest(addRequest);
+   std::cout << "response: " << outputFormattedData->GetData() << std::endl;
 
-    outputFormattedData.reset();
-    std::cout << "request: " << concatRequest << std::endl;
-    outputFormattedData = server.HandleRequest(concatRequest);
-    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
+   outputFormattedData.reset();
+   std::cout << "request: " << concatRequest << std::endl;
+   outputFormattedData = server.HandleRequest(concatRequest);
+   std::cout << "response: " << outputFormattedData->GetData() << std::endl;
 
-    outputFormattedData.reset();
-    std::cout << "request: " << addArrayRequest << std::endl;
-    outputFormattedData = server.HandleRequest(addArrayRequest);
-    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
+   outputFormattedData.reset();
+   std::cout << "request: " << addArrayRequest << std::endl;
+   outputFormattedData = server.HandleRequest(addArrayRequest);
+   std::cout << "response: " << outputFormattedData->GetData() << std::endl;
 
-    outputFormattedData.reset();
-    std::cout << "request: " << toStructRequest << std::endl;
-    outputFormattedData = server.HandleRequest(toStructRequest);
-    std::cout << "response: " << outputFormattedData->GetData() << std::endl;
-	
-	outputFormatedData.reset();
-    std::cout << "request: " << printNotificationRequest << std::endl;
-    outputFormatedData = server.HandleRequest(printNotificationRequest);
-    std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
+   outputFormattedData.reset();
+   std::cout << "request: " << toStructRequest << std::endl;
+   outputFormattedData = server.HandleRequest(toStructRequest);
+   std::cout << "response: " << outputFormattedData->GetData() << std::endl;
+
+   outputFormatedData.reset();
+   std::cout << "request: " << printNotificationRequest << std::endl;
+   outputFormatedData = server.HandleRequest(printNotificationRequest);
+   std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
 
    std::cout << "request: " << addIntAsyncRequest << std::endl;
    server.asyncHandleRequest(addIntAsyncRequest)
-  .then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
-     std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl; // {"jsonrpc":"2.0","id":11,"result":500}
-  });
+   .then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
+    std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl; // {"jsonrpc":"2.0","id":11,"result":500}
+   });
 
-    std::cout << "request: " << asyncReverseRequest << std::endl;
-    server.asyncHandleRequest(asyncReverseRequest)
-	.then([](auto futureDataPtr){        // can use auto parameter type in C++14     
-		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl; // {"jsonrpc":"2.0","id":13,"result":"zyx"}
-	});
-	 
+   std::cout << "request: " << asyncReverseRequest << std::endl;
+   server.asyncHandleRequest(asyncReverseRequest)
+   .then([](auto futureDataPtr){        // can use auto parameter type in C++14     
+     std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl; // {"jsonrpc":"2.0","id":13,"result":"zyx"}
+   });
+
     // Sleep in the main thread to allow the threaded requests to be processed.
-	 boost::this_thread::sleep_for(boost::chrono::seconds(2));
+    boost::this_thread::sleep_for(boost::chrono::seconds(2));
 
-	return 0;
+   return 0;
 }
 ```
 
