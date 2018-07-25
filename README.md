@@ -13,6 +13,20 @@ Currently, the only dependency is rapidjson (https://github.com/miloyip/rapidjso
 
 Another advantage of removing the dependencies is that now it is easy to compile and use on most platforms that support c++11, without much work.
 
+## Supporting Asynchronous Calls
+
+Exposing methods which do not block the server is possible on the basis of [C++ Futures](http://www.modernescpp.com/index.php/component/content/article/44-blog/multithreading/multithreading-c-17-and-c-20/279-std-future-extensions?Itemid=239) Extension Concurrency TS as already available via the [Boost Futures implementation](https://www.boost.org/doc/libs/1_67_0/doc/html/thread/synchronization.html#thread.synchronization.futures). The idea is that methods which take longer to complete return a `future` of the result which is later collected and replied with in a continuation method `.then()`. Of cource the future should carry a type convertible to `jsonrpc::Value`. This non-blocking behaviour of the server can be invoked with `server.asyncHandleRequest()` instead of `server.HandleRequest()`. `asyncHandleRequest` will handle non-future plain-value-returning methods too.
+
+### Asynchronous Lambdas
+
+For now rvalue references of asynchronous lambda are not supported and need to be wrapped with `std::function`. Also they are not properly disassembled by the dispatcher's `AddMethod` and thus need to register by `dispatcher.AddAsyncLambda()`.
+
+Asynchronous free static functions and member methods should register to the dispatcher in the same manner as the synchronous versions by `dispatcher.AddMethod()`. 
+
+### Additional Dependencies
+
+Until the [TS for Extensions for Concurrency](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4107.html) are implemented by C++2a, asynchronous call handling depends on it's implementation in [Boost Thread](https://www.boost.org/doc/libs/1_67_0/doc/html/thread.html) version 4. Thus building and linking to `boost_thread` (with `BOOST_THREAD_VERSION=4`) and `boost_system` (a dependency) is required. Linking to POSIX threads or the Windows counterpart is also needed for multi-threaded programs.
+
 ## Examples
 
 A simple server that process JSON-RPC requests:
@@ -24,6 +38,12 @@ class Math {
 public:
 	int Add(int a, int b) {
 		return a + b;
+	}
+
+   boost::future<int> AsyncAddInt(int a, int b) const {
+		return boost::async([](auto a, auto b){
+			return a + b;
+		}, a, b);
 	}
 
 	int64_t AddArray(const jsonrpc::Value::Array& a) {
@@ -58,6 +78,7 @@ int main() {
 	auto& dispatcher = server.GetDispatcher();
 	// if it is a member method, you must use this 3 parameter version, passing an instance of an object that implements it
 	dispatcher.AddMethod("add", &Math::Add, math);
+   dispatcher.AddMethod("async_add_int", &Math::AsyncAddInt, math)
 	dispatcher.AddMethod("add_array", &Math::AddArray, math); 
 	
 	// if it is just a regular function (non-member or static), you can you the 2 parameter AddMethod
@@ -65,12 +86,20 @@ int main() {
 	dispatcher.AddMethod("to_struct", &ToStruct);
 	dispatcher.AddMethod("print_notification", &PrintNotification);
 
+   std::function<boost::future<std::string>(std::string)> sReverse = [](std::string in) -> boost::future<std::string> { 
+         std::string res;
+         return boost::make_ready_future(res.assign(in.rbegin(), in.rend())); 
+      };
+	dispatcher.AddAsyncLambda("async_reverse", sReverse);
+
 	// on a real world, these requests come from your own transport implementation (sockets, http, ipc, named-pipes, etc)
 	const char addRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"id\":0,\"params\":[3,2]}";
+	const char addIntAsyncRequest[] = R"({"jsonrpc":"2.0","method":"async_add_int","id":11,"params":[300,200]})";
 	const char concatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":1,\"params\":[\"Hello, \",\"World!\"]}";
 	const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":5,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
 	const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
+   const char asyncReverseRequest[] = R"({"jsonrpc":"2.0","method":"async_reverse","id":13,"params":["xyz"]})";
 
 	std::shared_ptr<jsonrpc::FormattedData> outputFormattedData;
     std::cout << "request: " << addRequest << std::endl;
@@ -96,6 +125,21 @@ int main() {
     std::cout << "request: " << printNotificationRequest << std::endl;
     outputFormatedData = server.HandleRequest(printNotificationRequest);
     std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
+
+   std::cout << "request: " << addIntAsyncRequest << std::endl;
+   server.asyncHandleRequest(addIntAsyncRequest)
+  .then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
+     std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl; // {"jsonrpc":"2.0","id":11,"result":500}
+  });
+
+    std::cout << "request: " << asyncReverseRequest << std::endl;
+    server.asyncHandleRequest(asyncReverseRequest)
+	.then([](auto futureDataPtr){        // can use auto parameter type in C++14     
+		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl; // {"jsonrpc":"2.0","id":13,"result":"zyx"}
+	});
+	 
+    // Sleep in the main thread to allow the threaded requests to be processed.
+	 boost::this_thread::sleep_for(boost::chrono::seconds(2));
 
 	return 0;
 }

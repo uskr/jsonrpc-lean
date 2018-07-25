@@ -41,9 +41,9 @@ public:
 	}
 	
 	boost::future<int> AsyncAddInt(int a, int b) const {
-		return boost::async([=](){
+		return boost::async([](auto a, auto b){
 			return a + b;
-		});
+		}, a, b);
 	}
 	
 	boost::future<int> AsyncAdd(int a, int b) const {
@@ -58,6 +58,10 @@ public:
 
 std::string Concat(const std::string& a, const std::string& b) {
 	return a + b;
+}
+
+boost::future<std::string> AsyncConcat(const std::string& a, const std::string& b) {
+	boost::async([](auto a, auto b){ return a + b; }, a, b);
 }
 
 jsonrpc::Value ToBinary(const std::string& s) {
@@ -98,6 +102,20 @@ void RunServer() {
 	dispatcher.AddMethod("from_binary", &FromBinary);
 	dispatcher.AddMethod("to_struct", &ToStruct);
 	dispatcher.AddMethod("print_notification", &PrintNotification);
+	dispatcher.AddMethod("async_add", &Math::AsyncAdd, math);
+	dispatcher.AddMethod("async_add_int", &Math::AsyncAddInt, math);
+	dispatcher.AddMethod("async_concat", AsyncConcat);
+	
+	std::function<boost::future<std::string>(std::string)> sReverse = [](std::string in) -> boost::future<std::string> { 
+		std::string res;
+		return boost::make_ready_future(res.assign(in.rbegin(), in.rend())); 
+	};
+	
+	dispatcher.AddAsyncLambda("async_reverse", sReverse);
+	
+//	dispatcher.AddAsyncLambda("async_toIntToo", [](std::string in) -> boost::future<int> { 
+//		return boost::make_ready_future(stoi(in)); 
+//	});
 
 	dispatcher.GetMethod("add")
 		.SetHelpText("Add two integers")
@@ -112,6 +130,10 @@ void RunServer() {
 	const char toBinaryRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_binary\",\"id\":3,\"params\":[\"Hello World!\"]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":4,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
 	const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
+	 const char addAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add\",\"id\":10,\"params\":[30,20]}";
+	 const char addIntAsyncRequest[] = R"({"jsonrpc":"2.0","method":"async_add_int","id":11,"params":[300,200]})";
+	 const char asyncConcatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":12,\"params\":[\"Hello, \",\"World!\"]}";
+	  const char asyncReverseRequest[] = R"({"jsonrpc":"2.0","method":"async_reverse","id":13,"params":["xyz"]})";
 
 	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
 	
@@ -152,21 +174,27 @@ void RunServer() {
     outputFormatedData = server.HandleRequest(printNotificationRequest);
     std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
 	 
-	 dispatcher.AddMethod("async_add", &Math::AsyncAdd, math);
-	 const char addAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add\",\"id\":10,\"params\":[30,20]}";
-	 
 	 std::cout << "request: " << addAsyncRequest << std::endl;
     server.asyncHandleRequest(addAsyncRequest)
 	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
 		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
 	});
 		 
-    dispatcher.AddMethod("async_add_int", &Math::AsyncAddInt, math);
-	 const char addIntAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add_int\",\"id\":11,\"params\":[300,200]}";
 	 std::cout << "request: " << addIntAsyncRequest << std::endl;
-	 
     server.asyncHandleRequest(addIntAsyncRequest)
 	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
+		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
+	});
+	
+	 std::cout << "request: " << asyncConcatRequest << std::endl;
+    server.asyncHandleRequest(asyncConcatRequest)
+	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
+		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
+	});
+	
+	std::cout << "request: " << asyncReverseRequest << std::endl;
+    server.asyncHandleRequest(asyncReverseRequest)
+	.then([](auto futureDataPtr){
 		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
 	});
 	 

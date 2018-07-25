@@ -128,14 +128,53 @@ namespace jsonrpc {
             }
             return result.first->second;
         }
+		  
+		  
 
         template<typename MethodType>
         MethodWrapper&
-        //typename std::enable_if<!std::is_convertible<MethodType, std::function<Value(const Request::Parameters&)>>::value && !std::is_member_pointer<MethodType>::value, MethodWrapper>::type&
+//        typename std::enable_if<!std::is_convertible<MethodType, std::function<Value(const Request::Parameters&)>>::value && 
+//										  !std::is_member_pointer<MethodType>::value, MethodWrapper>::type&
         AddMethod(std::string name, MethodType method) {
             //static_assert(!std::is_bind_expression<MethodType>::value,
             //    "Use AddMethod with 3 arguments to add member method");
             typename StdFunction<MethodType, std::is_class<MethodType>::value>::Type function(std::move(method));
+            return AddMethodInternal(std::move(name), std::move(function));
+        }
+		  
+		  // for static functions returning futures
+		  template<typename ReturnType, typename... ParameterTypes>
+        MethodWrapper& AddMethod(std::string name, boost::future<ReturnType>(*fun)(ParameterTypes...)) 
+		  {
+			  std::function<boost::shared_future<jsonrpc::Value>(ParameterTypes...)> function = 
+				  [fun](ParameterTypes&&... params) -> boost::shared_future<jsonrpc::Value> 
+				  {
+                return fun(std::forward<ParameterTypes>(params)...)
+						 .then([](boost::future<ReturnType> f)
+						 {
+							 return jsonrpc::Value(f.get());
+						 })
+						 .share();
+					};
+					
+            return AddMethodInternal(std::move(name), std::move(function));
+        }
+		  
+		  // just copyable std::functions
+		  template<typename ReturnType, typename... ParameterTypes>
+        MethodWrapper& AddAsyncLambda(std::string name, std::function<boost::future<ReturnType>(ParameterTypes...)> fun) 
+		  {
+			  std::function<boost::shared_future<jsonrpc::Value>(ParameterTypes...)> function = 
+				  [fun](ParameterTypes&&... params) -> boost::shared_future<jsonrpc::Value> 
+				  {
+                return fun(std::forward<ParameterTypes>(params)...)
+						 .then([](boost::future<ReturnType> f)
+						 {
+							 return jsonrpc::Value(f.get());
+						 })
+						 .share();
+					};
+					
             return AddMethodInternal(std::move(name), std::move(function));
         }
 
@@ -165,7 +204,26 @@ namespace jsonrpc {
             return AddMethodInternal(std::move(name), std::move(function));
         }
 		  
-		  // this is a test if we can drop Value from the returned future type
+		  // member methods returning futures
+		  
+		  template<typename ReturnType, typename T, typename... ParameterTypes>
+        MethodWrapper& AddMethod(std::string name, boost::future<ReturnType>(T::*method)(ParameterTypes...), 
+		  T& instance) 
+		  {
+			  std::function<boost::shared_future<jsonrpc::Value>(ParameterTypes...)> function = 
+				  [&instance, method](ParameterTypes&&... params) -> boost::shared_future<jsonrpc::Value> 
+				  {
+                return (instance.*method)(std::forward<ParameterTypes>(params)...)
+						 .then([](boost::future<ReturnType> f)
+						 {
+							 return jsonrpc::Value(f.get());	// the outcome must be jsonrpc::Value-compatible
+						 })
+						 .share();  // convert to SharedFuture which is jsonrpc::Value-compatible
+					};
+					
+            return AddMethodInternal(std::move(name), std::move(function));
+        }
+		  
 		  template<typename ReturnType, typename T, typename... ParameterTypes>
         MethodWrapper& AddMethod(std::string name, boost::future<ReturnType>(T::*method)(ParameterTypes...) const, 
 		  T& instance) 
@@ -231,7 +289,7 @@ namespace jsonrpc {
             MethodWrapper::Method realMethod = [method](const Request::Parameters& params) -> Value {
                 if (params.size() != sizeof...(ParameterTypes)) {
                     throw InvalidParametersFault();
-                }
+                } 
                 return method(params[index].AsType<typename std::decay<ParameterTypes>::type>()...);
             };
             return AddMethod(std::move(name), std::move(realMethod));
