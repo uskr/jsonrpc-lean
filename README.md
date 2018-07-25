@@ -126,6 +126,13 @@ int main() {
    outputFormatedData = server.HandleRequest(printNotificationRequest);
    std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
 
+   std::cout << "test async wrapper around sync\nrequest: " << addRequest << std::endl;
+   server.asyncHandleRequest(addRequest)
+	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr)
+	{
+		 std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl; // {"jsonrpc":"2.0","id":0,"result":5}
+	});
+
    std::cout << "request: " << addIntAsyncRequest << std::endl;
    server.asyncHandleRequest(addIntAsyncRequest)
    .then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
