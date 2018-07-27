@@ -21,11 +21,11 @@ Exposing methods which do not block the server is possible on the basis of [C++ 
 The future should carry a type convertible to `jsonrpc::Value`. The non-blocking operation of the server can be reached by replacing `Server::HandleRequest` with `Server::asyncHandleRequest` and processing the response' `FormattedData` in the future callback: 
 
 ```C++
-std::string in;
-ioStream >> in; // incoming request
-server.asyncHandleRequest(asyncReverseRequest)
+std::string incomingRequest;
+ioStream >> incomingRequest; // read from a data source
+server.asyncHandleRequest(incomingRequest)
 .then([=](auto futureDataPtr){
-   iostream << futureDataPtr.get()->GetData();  // outgoing response
+   iostream << futureDataPtr.get()->GetData();  // write to the data sink
 });
 ```
 
