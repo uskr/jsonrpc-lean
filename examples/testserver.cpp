@@ -112,10 +112,6 @@ void RunServer() {
 	};
 	
 	dispatcher.AddAsyncLambda("async_reverse", sReverse);
-	
-//	dispatcher.AddAsyncLambda("async_toIntToo", [](std::string in) -> boost::future<int> { 
-//		return boost::make_ready_future(stoi(in)); 
-//	});
 
 	dispatcher.GetMethod("add")
 		.SetHelpText("Add two integers")

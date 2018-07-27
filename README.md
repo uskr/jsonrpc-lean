@@ -15,17 +15,31 @@ Another advantage of removing the dependencies is that now it is easy to compile
 
 ## Supporting Asynchronous Calls
 
-Exposing methods which do not block the server is possible on the basis of [C++ Futures](http://www.modernescpp.com/index.php/component/content/article/44-blog/multithreading/multithreading-c-17-and-c-20/279-std-future-extensions?Itemid=239) Extension Concurrency TS as already available via the [Boost Futures implementation](https://www.boost.org/doc/libs/1_67_0/doc/html/thread/synchronization.html#thread.synchronization.futures). The idea is that methods which take longer to complete return a `future` of the result which is later collected and replied with in a continuation method `.then()`. Of cource the future should carry a type convertible to `jsonrpc::Value`. This non-blocking behaviour of the server can be invoked with `server.asyncHandleRequest()` instead of `server.HandleRequest()`. `asyncHandleRequest` will handle non-future plain-value-returning methods too.
+Exposing methods which do not block the server is possible on the basis of [C++ Futures](http://www.modernescpp.com/index.php/component/content/article/44-blog/multithreading/multithreading-c-17-and-c-20/279-std-future-extensions?Itemid=239) Extension Concurrency TS which are already available via the [Boost Futures v.4implementation](https://www.boost.org/doc/libs/1_67_0/doc/html/thread/synchronization.html#thread.synchronization.futures). The idea is that methods which take longer to complete return a `future` of the result which is later collected and replied with in a continuation method `.then()`. This way the JSON-RPC server does not block it's thread while computing the response to a call.
+
+
+The future should carry a type convertible to `jsonrpc::Value`. The non-blocking operation of the server can be reached by replacing `Server::HandleRequest` with `Server::asyncHandleRequest` and processing the response' `FormattedData` in the future callback: 
+
+```C++
+std::string in;
+ioStream >> in; // incoming request
+server.asyncHandleRequest(asyncReverseRequest)
+.then([=](auto futureDataPtr){
+   iostream << futureDataPtr.get()->GetData();  // outgoing response
+});
+```
+
+This can be done in general for all incoming requests, because the implementation of `Server::asyncHandleRequest()` can deal with synchronous plain-value-returning methods too. Except for [Lambda methods](#asynchronous-lambdas) no other changes are required by the implementation.
 
 ### Asynchronous Lambdas
 
-For now rvalue references of asynchronous lambda are not supported and need to be wrapped with `std::function`. Also they are not properly disassembled by the dispatcher's `AddMethod` and thus need to register by `dispatcher.AddAsyncLambda()`.
+For now rvalue references of asynchronous lambda are not supported and need to be wrapped with `std::function`. Also these `std::functions`s are not properly disassembled by the template machinery in `Dispatcher::AddMethod` and thus need to register via a custom method `Dispatcher::AddAsyncLambda`.
 
-Asynchronous free static functions and member methods should register to the dispatcher in the same manner as the synchronous versions by `dispatcher.AddMethod()`. 
+Asynchronous free static functions and member methods should register to the dispatcher in the same manner as the synchronous versions by `Dispatcher::AddMethod`.
 
 ### Additional Dependencies
 
-Until the [TS for Extensions for Concurrency](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4107.html) are implemented by C++2a, asynchronous call handling depends on it's implementation in [Boost Thread](https://www.boost.org/doc/libs/1_67_0/doc/html/thread.html) version 4. Thus building and linking to `boost_thread` (with `BOOST_THREAD_VERSION=4`) and `boost_system` (a dependency) is required. Linking to POSIX threads or the Windows counterpart is also needed for multi-threaded programs.
+Until the [TS for Extensions for Concurrency](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4107.html) are implemented by C++2a, asynchronous call handling depends on it's implementation in [Boost Thread](https://www.boost.org/doc/libs/1_67_0/doc/html/thread.html) v. 4. Thus building and linking to `boost_thread` (with `BOOST_THREAD_VERSION=4`) and `boost_system` (a dependency) is required. Linking to POSIX threads or the Windows counterpart is also needed for multi-threaded programs.
 
 ## Examples
 
