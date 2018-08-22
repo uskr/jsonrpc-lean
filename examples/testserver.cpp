@@ -120,8 +120,8 @@ void RunServer() {
 	//bool run = true;
 	//dispatcher.AddMethod("exit", [&]() { run = false; }).SetHidden();
 	
-	const char addRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"id\":0,\"params\":[3,2]}";
-	const char concatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":1,\"params\":[\"Hello, \",\"World!\"]}";
+	const char addRequest[] = R"({"jsonrpc":"2.0","method":"add","id":0,"params":[3,2]})";
+	const char concatRequest[] = R"({"jsonrpc":"2.0","method":"concat","id":1,"params":["Hello, ","33"]})";
 	const char addArrayRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"add_array\",\"id\":2,\"params\":[[1000,2147483647]]}";
 	const char toBinaryRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_binary\",\"id\":3,\"params\":[\"Hello World!\"]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":4,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";

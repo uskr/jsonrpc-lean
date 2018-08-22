@@ -150,10 +150,12 @@ namespace jsonrpc {
                 return Value(std::move(array));
             }
             case rapidjson::kStringType: {
-                tm dt;
+					// dropping support for date string detection because of 
+					// https://github.com/uskr/jsonrpc-lean/issues/8
+                /*tm dt;
                 if (util::ParseIso8601DateTime(value.GetString(), dt)) {
                     return Value(dt);
-                }
+                }*/
 
                 std::string str(value.GetString(), value.GetStringLength());
                 const bool binary = str.find('\0') != std::string::npos;
