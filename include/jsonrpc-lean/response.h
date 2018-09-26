@@ -24,12 +24,14 @@ namespace jsonrpc {
         Response(Value value, Value id) : myResult(std::move(value)),
             myIsFault(false),
             myFaultCode(0),
+			  myFaultDataString(""),
             myId(std::move(id)) {
         }
 
-        Response(int32_t faultCode, std::string faultString, Value id) : myIsFault(true),
+        Response(int32_t faultCode, std::string faultString, Value id, const std::string faultDataString = "") : myIsFault(true),
             myFaultCode(faultCode),
             myFaultString(std::move(faultString)),
+				myFaultDataString(faultDataString),
             myId(std::move(id)) {
         }
 
@@ -37,7 +39,7 @@ namespace jsonrpc {
             writer.StartDocument();
             if (myIsFault) {
                 writer.StartFaultResponse(myId);
-                writer.WriteFault(myFaultCode, myFaultString);
+                writer.WriteFault(myFaultCode, myFaultString, myFaultDataString);
                 writer.EndFaultResponse();
             } else {
                 writer.StartResponse(myId);
@@ -77,7 +79,7 @@ namespace jsonrpc {
 							}
 							catch (const std::system_error& ex) {
 								writer->StartFaultResponse(myId);
-								writer->WriteFault(ex.code().value(), ex.what());
+								writer->WriteFault(ex.code().value(), ex.what(), ex.code().category().name());
 								writer->EndFaultResponse();
 							}
 							catch (const std::exception& ex) 
@@ -149,7 +151,7 @@ namespace jsonrpc {
         Value myResult;
         bool myIsFault;
         int32_t myFaultCode;
-        std::string myFaultString;
+        std::string myFaultString, myFaultDataString;
         Value myId;
     };
 

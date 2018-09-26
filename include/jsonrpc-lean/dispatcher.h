@@ -262,7 +262,7 @@ namespace jsonrpc {
                 return Response(fault.GetCode(), fault.GetString(), Value(id));
             }
 				catch (const std::system_error& ex) {
-					return Response(ex.code().value(), ex.what(), Value(id));
+					return Response(ex.code().value(), ex.what(), Value(id), ex.code().category().name());
 				}
             catch (const std::exception& ex) {
                 return Response(0, ex.what(), Value(id));

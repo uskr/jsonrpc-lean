@@ -120,10 +120,15 @@ void RunServer() {
 	dispatcher.AddAsyncLambda("async_reverse", sReverse);
 	
 	// EACCESS is 13 (see http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html)
-	dispatcher.AddMethod("fail", [](){ throw std::system_error(std::make_error_code(std::errc::permission_denied)); });
+	dispatcher.AddMethod("fail", [](){ 
+		throw std::system_error(std::make_error_code(std::errc::permission_denied), "specific error message"); 
+	});
 	
 	std::function<boost::future<int>()> asyncFail = []() -> boost::future<int> { 
-		return boost::make_exceptional_future<int>(std::system_error(std::make_error_code(std::errc::permission_denied))); 
+		return boost::make_exceptional_future<int>(std::system_error(
+			std::make_error_code(std::errc::permission_denied), 
+			"specific error message")
+		); 
 	};
 	
 	dispatcher.AddAsyncLambda("asyncFail", asyncFail);
