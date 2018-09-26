@@ -75,6 +75,11 @@ namespace jsonrpc {
 								result.Write(*writer);
 								writer->EndResponse();
 							}
+							catch (const std::system_error& ex) {
+								writer->StartFaultResponse(myId);
+								writer->WriteFault(ex.code().value(), ex.what());
+								writer->EndFaultResponse();
+							}
 							catch (const std::exception& ex) 
 							{
 								writer->StartFaultResponse(myId);

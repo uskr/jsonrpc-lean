@@ -261,6 +261,9 @@ namespace jsonrpc {
                 InvalidParametersFault fault;
                 return Response(fault.GetCode(), fault.GetString(), Value(id));
             }
+				catch (const std::system_error& ex) {
+					return Response(ex.code().value(), ex.what(), Value(id));
+				}
             catch (const std::exception& ex) {
                 return Response(0, ex.what(), Value(id));
             }

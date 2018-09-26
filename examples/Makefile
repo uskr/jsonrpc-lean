@@ -40,10 +40,11 @@ LDLIBS_testserver = $(USERLIBS_testserver)
 LDLIBS := boost_system
 LDLIBS += boost_filesystem
 
+BOOST_SHARED_LIBRARY_INSTALL_PATH = /home/semmel/NetBeansProjects/lib-sources/boost_1_67_0/stage/lib
 
 # Link or archive
 $(TARGETDIR_testserver)/testserver: $(TARGETDIR_testserver) $(OBJS_testserver) $(DEPLIBS_testserver)
-	$(LINK.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ $(OBJS_testserver) -L../../../../boost_1_67_0/stage/lib -lboost_system -lboost_filesystem -lpthread -lboost_thread
+	$(LINK.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ $(OBJS_testserver) -L../../../../boost_1_67_0/stage/lib -lboost_system -lboost_filesystem -lpthread -lboost_thread -Wl,-rpath,$(BOOST_SHARED_LIBRARY_INSTALL_PATH)
 
 
 # Compile source files into .o files
@@ -70,7 +71,7 @@ LDLIBS_testclient = $(USERLIBS_testclient)
 
 # Link or archive
 $(TARGETDIR_testserver)/testclient: $(TARGETDIR_testserver) $(OBJS_testclient) $(DEPLIBS_testclient)
-	$(LINK.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ $(OBJS_testclient) $(LDLIBS_testclient) -L../../../../boost_1_67_0/stage/lib -lboost_system -lboost_filesystem -lpthread -lboost_thread
+	$(LINK.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ $(OBJS_testclient) $(LDLIBS_testclient) -L../../../../boost_1_67_0/stage/lib -lboost_system -lboost_filesystem -lpthread -lboost_thread -Wl,-rpath,$(BOOST_SHARED_LIBRARY_INSTALL_PATH)
 
 
 # Compile source files into .o files

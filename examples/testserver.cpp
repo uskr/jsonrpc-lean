@@ -30,6 +30,7 @@
 #include <string>
 #include <memory>
 #include <stdint.h>
+#include <system_error>
 
 #define BOOST_THREAD_VERSION 4
 #include <boost/thread/future.hpp>
@@ -48,6 +49,10 @@ public:
 	
 	boost::future<int> AsyncAdd(int a, int b) const {
 		return boost::async(&Math::Add, this, a, b);
+	}
+	
+	boost::future<int64_t> AsyncAddSizeT(int a, int b) const {
+		return boost::make_ready_future((int64_t)(size_t)10);
 	}
 
 	int64_t AddArray(const jsonrpc::Value::Array& a) {
@@ -103,6 +108,7 @@ void RunServer() {
 	dispatcher.AddMethod("to_struct", &ToStruct);
 	dispatcher.AddMethod("print_notification", &PrintNotification);
 	dispatcher.AddMethod("async_add", &Math::AsyncAdd, math);
+	dispatcher.AddMethod("async_add_size_t", &Math::AsyncAddSizeT, math);
 	dispatcher.AddMethod("async_add_int", &Math::AsyncAddInt, math);
 	dispatcher.AddMethod("async_concat", AsyncConcat);
 	
@@ -112,6 +118,15 @@ void RunServer() {
 	};
 	
 	dispatcher.AddAsyncLambda("async_reverse", sReverse);
+	
+	// EACCESS is 13 (see http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html)
+	dispatcher.AddMethod("fail", [](){ throw std::system_error(std::make_error_code(std::errc::permission_denied)); });
+	
+	std::function<boost::future<int>()> asyncFail = []() -> boost::future<int> { 
+		return boost::make_exceptional_future<int>(std::system_error(std::make_error_code(std::errc::permission_denied))); 
+	};
+	
+	dispatcher.AddAsyncLambda("asyncFail", asyncFail);
 
 	dispatcher.GetMethod("add")
 		.SetHelpText("Add two integers")
@@ -126,10 +141,13 @@ void RunServer() {
 	const char toBinaryRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_binary\",\"id\":3,\"params\":[\"Hello World!\"]}";
 	const char toStructRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"to_struct\",\"id\":4,\"params\":[[12,\"foobar\",[12,\"foobar\"]]]}";
 	const char printNotificationRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"print_notification\",\"params\":[\"This is just a notification, no response expected!\"]}";
-	 const char addAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add\",\"id\":10,\"params\":[30,20]}";
-	 const char addIntAsyncRequest[] = R"({"jsonrpc":"2.0","method":"async_add_int","id":11,"params":[300,200]})";
-	 const char asyncConcatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":12,\"params\":[\"Hello, \",\"World!\"]}";
-	  const char asyncReverseRequest[] = R"({"jsonrpc":"2.0","method":"async_reverse","id":13,"params":["xyz"]})";
+	const char addAsyncRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"async_add\",\"id\":10,\"params\":[30,20]}";
+	const char addIntAsyncRequest[] = R"({"jsonrpc":"2.0","method":"async_add_int","id":11,"params":[300,200]})";
+	const char addIntAsyncToSizeTRequest[] = R"({"jsonrpc":"2.0","method":"async_add_size_t","id":14,"params":[300,200]})";
+	const char asyncConcatRequest[] = "{\"jsonrpc\":\"2.0\",\"method\":\"concat\",\"id\":12,\"params\":[\"Hello, \",\"World!\"]}";
+	const char asyncReverseRequest[] = R"({"jsonrpc":"2.0","method":"async_reverse","id":13,"params":["xyz"]})";
+	const char failRequest[] = R"({"jsonrpc":"2.0","method":"fail","id":20})";
+	const char asyncFailRequest[] = R"({"jsonrpc":"2.0","method":"asyncFail","id":21})";
 
 	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
 	
@@ -170,6 +188,11 @@ void RunServer() {
     outputFormatedData = server.HandleRequest(printNotificationRequest);
     std::cout << "response size: " << outputFormatedData->GetSize() << std::endl;
 	 
+	 outputFormatedData.reset();
+    std::cout << "request: " << failRequest << std::endl;
+    outputFormatedData = server.HandleRequest(failRequest);
+    std::cout << "response: " << outputFormatedData->GetData() << std::endl;
+	 
 	 std::cout << "request: " << addAsyncRequest << std::endl;
     server.asyncHandleRequest(addAsyncRequest)
 	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
@@ -190,6 +213,18 @@ void RunServer() {
 	
 	std::cout << "request: " << asyncReverseRequest << std::endl;
     server.asyncHandleRequest(asyncReverseRequest)
+	.then([](auto futureDataPtr){
+		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
+	});
+	
+	 std::cout << "request: " << addIntAsyncToSizeTRequest << std::endl;
+    server.asyncHandleRequest(addIntAsyncToSizeTRequest)
+	.then([](boost::shared_future<std::shared_ptr<jsonrpc::FormattedData>> futureDataPtr){
+		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
+	});
+	
+	std::cout << "request: " << asyncFailRequest << std::endl;
+   server.asyncHandleRequest(asyncFailRequest)
 	.then([](auto futureDataPtr){
 		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
 	});
