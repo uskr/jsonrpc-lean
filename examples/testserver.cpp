@@ -130,9 +130,14 @@ void RunServer() {
 			"specific error message")
 		); 
 	};
-	
 	dispatcher.AddAsyncLambda("asyncFail", asyncFail);
 
+	std::function<boost::future<int>(int)> asyncThrow = [](int x) -> boost::future<int> { 
+		throw std::out_of_range("Exception description from inside an async lambda method.");
+		return boost::make_ready_future<int>( x * x );
+	};
+	dispatcher.AddAsyncLambda("asyncThrow", asyncThrow);
+	
 	dispatcher.GetMethod("add")
 		.SetHelpText("Add two integers")
 		.AddSignature(jsonrpc::Value::Type::INTEGER_32, jsonrpc::Value::Type::INTEGER_32, jsonrpc::Value::Type::INTEGER_32);
@@ -153,6 +158,7 @@ void RunServer() {
 	const char asyncReverseRequest[] = R"({"jsonrpc":"2.0","method":"async_reverse","id":13,"params":["xyz"]})";
 	const char failRequest[] = R"({"jsonrpc":"2.0","method":"fail","id":20})";
 	const char asyncFailRequest[] = R"({"jsonrpc":"2.0","method":"asyncFail","id":21})";
+	const char asyncThrowRequest[] = R"({"jsonrpc":"2.0","method":"asyncThrow","id":22, "params":[5]})";
 
 	std::shared_ptr<jsonrpc::FormattedData> outputFormatedData;
 	
@@ -230,6 +236,12 @@ void RunServer() {
 	
 	std::cout << "request: " << asyncFailRequest << std::endl;
    server.asyncHandleRequest(asyncFailRequest)
+	.then([](auto futureDataPtr){
+		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
+	});
+	
+	std::cout << "request: " << asyncThrowRequest << std::endl;
+   server.asyncHandleRequest(asyncThrowRequest)
 	.then([](auto futureDataPtr){
 		std::cout << "response: " << futureDataPtr.get()->GetData() << std::endl;
 	});

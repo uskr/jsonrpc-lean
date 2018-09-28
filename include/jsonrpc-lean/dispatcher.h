@@ -257,10 +257,6 @@ namespace jsonrpc {
             catch (const Fault& fault) {
                 return Response(fault.GetCode(), fault.GetString(), Value(id));
             }
-            catch (const std::out_of_range&) {
-                InvalidParametersFault fault;
-                return Response(fault.GetCode(), fault.GetString(), Value(id));
-            }
 				catch (const std::system_error& ex) {
 					return Response(ex.code().value(), ex.what(), Value(id), ex.code().category().name());
 				}
