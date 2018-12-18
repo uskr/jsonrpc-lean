@@ -224,6 +224,25 @@ namespace jsonrpc {
             return AddMethodInternal(std::move(name), std::move(function));
         }
 		  
+		  template<typename T, typename... ParameterTypes>
+        MethodWrapper& AddMethod(std::string name, boost::future<void>(T::*method)(ParameterTypes...), 
+		  T& instance) 
+		  {
+			  std::function<boost::shared_future<jsonrpc::Value>(ParameterTypes...)> function = 
+				  [&instance, method](ParameterTypes&&... params) -> boost::shared_future<jsonrpc::Value> 
+				  {
+                return (instance.*method)(std::forward<ParameterTypes>(params)...)
+						 .then([](boost::future<void> f)
+						 {
+							 f.get();
+							 return jsonrpc::Value(0);	// the outcome must be jsonrpc::Value-compatible
+						 })
+						 .share();  // convert to SharedFuture which is jsonrpc::Value-compatible
+					};
+					
+            return AddMethodInternal(std::move(name), std::move(function));
+        }
+		  
 		  template<typename ReturnType, typename T, typename... ParameterTypes>
         MethodWrapper& AddMethod(std::string name, boost::future<ReturnType>(T::*method)(ParameterTypes...) const, 
 		  T& instance) 
