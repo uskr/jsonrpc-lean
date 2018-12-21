@@ -22,6 +22,7 @@ namespace jsonrpc {
         const char ERROR_NAME[] = "error";
         const char ERROR_CODE_NAME[] = "code";
         const char ERROR_MESSAGE_NAME[] = "message";
+		  const char ERROR_DATA_NAME[] = "data";
 
     } // namespace json
 } // namespace jsonrpc

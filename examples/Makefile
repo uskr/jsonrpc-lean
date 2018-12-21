@@ -1,0 +1,119 @@
+## -*- Makefile -*-
+##
+## User: semmel
+## Time: Jul 20, 2018 5:00:41 PM
+## Makefile created by Oracle Developer Studio.
+##
+## This file is generated automatically.
+##
+
+
+#### Compiler and tool definitions shared by all build targets #####
+CCC = g++
+CXX = g++
+BASICOPTS = -g -std=gnu++14
+CCFLAGS = $(BASICOPTS)  "-Wno-parentheses"
+CXXFLAGS = $(BASICOPTS)  "-Wno-parentheses"
+CCADMIN = 
+
+
+# Define the target directories.
+TARGETDIR_testserver=GNU-amd64-Linux
+TARGETDIR_testserver=GNU-amd64-Linux
+
+
+all: $(TARGETDIR_testserver)/testserver $(TARGETDIR_testserver)/testclient
+
+## Target: testserver
+CPPFLAGS_testserver = \
+	-I../include \
+	-I../../../../boost_1_67_0 \
+	-I../../../../rapidjson/include \
+	-DBOOST_CHRONO_HEADER_ONLY
+OBJS_testserver =  \
+	$(TARGETDIR_testserver)/testserver.o
+USERLIBS_testserver = 
+USERLIBS_testserver = $(SYSLIBS_testserver) 
+DEPLIBS_testserver =  
+LDLIBS_testserver = $(USERLIBS_testserver)
+
+LDLIBS := boost_system
+LDLIBS += boost_filesystem
+
+BOOST_SHARED_LIBRARY_INSTALL_PATH = /home/semmel/NetBeansProjects/lib-sources/boost_1_67_0/stage/lib
+
+# Link or archive
+$(TARGETDIR_testserver)/testserver: $(TARGETDIR_testserver) $(OBJS_testserver) $(DEPLIBS_testserver)
+	$(LINK.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ $(OBJS_testserver) -L../../../../boost_1_67_0/stage/lib -lboost_system -lboost_filesystem -lpthread -lboost_thread -Wl,-rpath,$(BOOST_SHARED_LIBRARY_INSTALL_PATH)
+
+
+# Compile source files into .o files
+$(TARGETDIR_testserver)/testserver.o: $(TARGETDIR_testserver) testserver.cpp
+	$(COMPILE.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ testserver.cpp
+
+$(TARGETDIR_testserver)/base64.o: $(TARGETDIR_testserver) base64.cpp
+	$(COMPILE.cc) $(CCFLAGS_testserver) $(CPPFLAGS_testserver) -o $@ base64.cpp
+
+
+
+## Target: testclient
+CPPFLAGS_testclient = \
+	-I../include \
+	-I../../../../boost_1_67_0 \
+	-I../../../../rapidjson/include \
+	-DBOOST_CHRONO_HEADER_ONLY
+OBJS_testclient =  \
+	$(TARGETDIR_testserver)/testclient.o
+USERLIBS_testclient = $(SYSLIBS_testclient) 
+DEPLIBS_testclient =  
+LDLIBS_testclient = $(USERLIBS_testclient)
+
+
+# Link or archive
+$(TARGETDIR_testserver)/testclient: $(TARGETDIR_testserver) $(OBJS_testclient) $(DEPLIBS_testclient)
+	$(LINK.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ $(OBJS_testclient) $(LDLIBS_testclient) -L../../../../boost_1_67_0/stage/lib -lboost_system -lboost_filesystem -lpthread -lboost_thread -Wl,-rpath,$(BOOST_SHARED_LIBRARY_INSTALL_PATH)
+
+
+# Compile source files into .o files
+$(TARGETDIR_testserver)/base64.o: $(TARGETDIR_testserver) base64.cpp
+	$(COMPILE.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ base64.cpp
+
+$(TARGETDIR_testserver)/testclient.o: $(TARGETDIR_testserver) testclient.cpp
+	$(COMPILE.cc) $(CCFLAGS_testclient) $(CPPFLAGS_testclient) -o $@ testclient.cpp
+
+
+
+#### Clean target deletes all generated files ####
+clean:
+	rm -f \
+		$(TARGETDIR_testserver)/testserver \
+		$(TARGETDIR_testserver)/testserver.o \
+		$(TARGETDIR_testserver)/base64.o \
+		$(TARGETDIR_testserver)/testclient \
+		$(TARGETDIR_testserver)/base64.o \
+		$(TARGETDIR_testserver)/testclient.o \
+		$(TARGETDIR_testserver)/libboost_system.so.1.67.0 \
+		$(TARGETDIR_testserver)/libboost_filesystem.so.1.67.0 \
+		$(TARGETDIR_testserver)/libboost_thread.so.1.67.0
+	$(CCADMIN)
+	rm -f -r $(TARGETDIR_testserver)
+
+
+# Create the target directory (if needed)
+$(TARGETDIR_testserver):
+	mkdir -p $(TARGETDIR_testserver); \
+	cd $(TARGETDIR_testserver); \
+	ln -s ../../../../../boost_1_67_0/stage/lib/libboost_system.so.1.67.0  libboost_system.so.1.67.0; \
+	ln -s ../../../../../boost_1_67_0/stage/lib/libboost_filesystem.so.1.67.0  libboost_filesystem.so.1.67.0; \
+	ln -s ../../../../../boost_1_67_0/stage/lib/libboost_thread.so.1.67.0  libboost_thread.so.1.67.0
+
+## Target: test_server
+runserver:
+	cd $(TARGETDIR_testserver); \
+	LD_LIBRARY_PATH=. ; \
+	./testserver
+
+# Enable dependency checking
+.KEEP_STATE:
+.KEEP_STATE_FILE:.make.state.GNU-amd64-Linux
+

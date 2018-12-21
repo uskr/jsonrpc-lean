@@ -9,21 +9,29 @@
 
 #include "value.h"
 
+#define BOOST_THREAD_VERSION 4
+#include <boost/thread/future.hpp>
+
 namespace jsonrpc {
 
     class Writer;
+	 
+	 typedef std::unique_ptr<Writer> WriterPtr;
+	 typedef std::shared_ptr<FormattedData> FormattedDataPtr;
 
     class Response {
     public:
         Response(Value value, Value id) : myResult(std::move(value)),
             myIsFault(false),
             myFaultCode(0),
+			  myFaultDataString(""),
             myId(std::move(id)) {
         }
 
-        Response(int32_t faultCode, std::string faultString, Value id) : myIsFault(true),
+        Response(int32_t faultCode, std::string faultString, Value id, const std::string faultDataString = "") : myIsFault(true),
             myFaultCode(faultCode),
             myFaultString(std::move(faultString)),
+				myFaultDataString(faultDataString),
             myId(std::move(id)) {
         }
 
@@ -31,7 +39,7 @@ namespace jsonrpc {
             writer.StartDocument();
             if (myIsFault) {
                 writer.StartFaultResponse(myId);
-                writer.WriteFault(myFaultCode, myFaultString);
+                writer.WriteFault(myFaultCode, myFaultString, myFaultDataString);
                 writer.EndFaultResponse();
             } else {
                 writer.StartResponse(myId);
@@ -40,6 +48,64 @@ namespace jsonrpc {
             }
             writer.EndDocument();
         }
+		  
+		  boost::future<FormattedDataPtr> asyncWrite(WriterPtr writer) const 
+		  {
+			  writer->StartDocument();
+			  
+            if (myIsFault) 
+				{	
+                writer->StartFaultResponse(myId);
+                writer->WriteFault(myFaultCode, myFaultString);
+                writer->EndFaultResponse();
+					 writer->EndDocument();
+					 return boost::make_ready_future(writer->GetData());
+            }
+				
+				if (myResult.IsFuture())
+				{
+					Value requestId(myId);
+					
+					return myResult.AsFuture()
+						.then([writer = std::move(writer), myId = std::move(requestId)](boost::shared_future<Value> futureResult)
+						{
+							try
+							{
+								const Value& result = futureResult.get();
+								
+								writer->StartResponse(myId);
+								result.Write(*writer);
+								writer->EndResponse();
+							}
+							catch (const std::system_error& ex) {
+								writer->StartFaultResponse(myId);
+								writer->WriteFault(ex.code().value(), ex.what(), ex.code().category().name());
+								writer->EndFaultResponse();
+							}
+							catch (const std::exception& ex) 
+							{
+								writer->StartFaultResponse(myId);
+								writer->WriteFault(0, ex.what());
+								writer->EndFaultResponse();
+						   }
+						   catch (...) {
+								writer->StartFaultResponse(myId);
+								writer->WriteFault(0, "unknown error");
+								writer->EndFaultResponse();
+						   }
+							
+							 writer->EndDocument();
+							
+							return writer->GetData();
+						});
+				}
+				
+				writer->StartResponse(myId);
+				myResult.Write(*writer);
+				writer->EndResponse();
+            writer->EndDocument();
+				return boost::make_ready_future(writer->GetData());
+		  }
 
         Value& GetResult() { return myResult; }
         bool IsFault() const { return myIsFault; }
@@ -85,7 +151,7 @@ namespace jsonrpc {
         Value myResult;
         bool myIsFault;
         int32_t myFaultCode;
-        std::string myFaultString;
+        std::string myFaultString, myFaultDataString;
         Value myId;
     };
 

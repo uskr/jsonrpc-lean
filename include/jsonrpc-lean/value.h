@@ -15,6 +15,9 @@
 #include <vector>
 #include <ostream>
 
+#define BOOST_THREAD_VERSION 4
+#include <boost/thread/future.hpp>
+
 #include "util.h"
 #include "fault.h"
 #include "writer.h"
@@ -29,6 +32,7 @@ namespace jsonrpc {
         typedef tm DateTime;
         typedef std::string String;
         typedef std::map<std::string, Value> Struct;
+		  typedef boost::shared_future<Value> SharedFuture;
 
         enum class Type {
             ARRAY,
@@ -40,7 +44,8 @@ namespace jsonrpc {
             INTEGER_64,
             NIL,
             STRING,
-            STRUCT
+            STRUCT,
+				FUTURE
         };
 
         Value() : myType(Type::NIL) {}
@@ -78,6 +83,10 @@ namespace jsonrpc {
 
         Value(Struct value) : myType(Type::STRUCT) {
             as.myStruct = new Struct(std::move(value));
+        }
+		  
+		  Value(SharedFuture value) : myType(Type::FUTURE) {
+			  as.myFuture = new SharedFuture(value);
         }
 
         ~Value() {
@@ -128,6 +137,9 @@ namespace jsonrpc {
             case Type::STRUCT:
                 as.myStruct = new Struct(other.AsStruct());
                 break;
+				case Type::FUTURE:
+                as.myFuture = new SharedFuture(other.AsFuture());
+                break;
             }
         }
 
@@ -159,6 +171,7 @@ namespace jsonrpc {
         bool IsNil() const { return myType == Type::NIL; }
         bool IsString() const { return myType == Type::STRING; }
         bool IsStruct() const { return myType == Type::STRUCT; }
+		  bool IsFuture() const { return myType == Type::FUTURE; }
 
         const Array& AsArray() const {
             if (IsArray()) {
@@ -220,9 +233,19 @@ namespace jsonrpc {
             }
             throw InvalidParametersFault();
         }
+		  
+		  SharedFuture& AsFuture() const {
+            if (IsFuture()) {
+                return *as.myFuture;
+            }
+            throw InvalidParametersFault();
+        }
 
         template<typename T>
         inline const T& AsType() const;
+		  
+		  template<typename T>
+        inline T& AsType();
 
         Type GetType() const { return myType; }
 
@@ -268,6 +291,8 @@ namespace jsonrpc {
                 }
                 writer.EndStruct();
                 break;
+				case Type::FUTURE:
+					throw std::runtime_error("Future of a result cannot be written");
             }
         }
 
@@ -290,6 +315,10 @@ namespace jsonrpc {
             case Type::STRUCT:
                 delete as.myStruct;
                 break;
+					 
+				case Type::FUTURE:
+					delete as.myFuture;
+					break;
 
             case Type::BOOLEAN:
             case Type::DOUBLE:
@@ -309,6 +338,7 @@ namespace jsonrpc {
             DateTime* myDateTime;
             String* myString;
             Struct* myStruct;
+				SharedFuture* myFuture;
             struct {
                 double myDouble;
                 int32_t myInteger32;
@@ -347,6 +377,10 @@ namespace jsonrpc {
 
     template<> inline const Value::Struct& Value::AsType<typename Value::Struct>() const {
         return AsStruct();
+    }
+	 
+	  template<> inline Value::SharedFuture& Value::AsType<typename Value::SharedFuture>() {
+        return AsFuture();
     }
 
     template<> inline const Value& Value::AsType<Value>() const {
@@ -411,6 +445,9 @@ namespace jsonrpc {
             os << '}';
             break;
         }
+		  case Value::Type::FUTURE:
+            os << "<future>";
+            break;
         }
         return os;
     }
