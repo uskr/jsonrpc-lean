@@ -56,7 +56,6 @@ namespace jsonrpc {
         virtual void Write(int32_t value) = 0;
         virtual void Write(int64_t value) = 0;
         virtual void Write(const std::string& value) = 0;
-        virtual void Write(const tm& value) = 0;
     };
 
 } // namespace jsonrpc

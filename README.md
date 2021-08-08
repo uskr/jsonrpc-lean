@@ -1,17 +1,18 @@
 
 # jsonrpc-lean
+# version: 1.1.0
 
-An [LGPL](https://www.gnu.org/licenses/lgpl-3.0.en.html) licensed, client/server, transport-agnostic, JSON-RPC library for C++11.
+An [LGPL](https://www.gnu.org/licenses/lgpl-3.0.en.html) licensed, client/server, transport-agnostic, JSON-RPC library for C++.
 
-The initial jsonrpc-lean implementation is derived from xsonrpc (https://github.com/erijo/xsonrpc) by Erik Johansson (https://github.com/erijo/). Much thanks to him for doing all the heavy work.
+The initial jsonrpc-lean implementation is derived from xsonrpc (https://github.com/erijo/xsonrpc) by Erik Johansson (https://github.com/erijo/). Many thanks to him.
 
 The main idea behind branching xsonrpc and building a new project is to have a simple, transport-agnostic, header-only implementation, with as little external dependencies as possible. 
 
 Anyone can use this lib by just adding the include folder to their include path and they are good to go.
 
-Currently, the only dependency is rapidjson (https://github.com/miloyip/rapidjson), which is also a header-only implementation. Add rapidjson to your include path, and done.
+Currently, the only dependency is rapidjson (https://github.com/Tencent/rapidjson), which is also a header-only implementation. Add rapidjson to your include path, and done.
 
-Another advantage of removing the dependencies is that now it is easy to compile and use on most platforms that support c++11, without much work.
+Another advantage of removing the dependencies is that now it is easy to compile and use on most platforms that support c++, without much work.
 
 ## Examples
 
@@ -166,6 +167,6 @@ int main(int argc, char** argv) {
 
 To use jsonrpc-lean on your project, all you need is:
 
-* A C++11 capable compiler (GCC 5.0+ (Linux), XCode/Clang (OSX 10.7+), MSVC 14.0+ (Visual Studio 2015))
-* [rapidjson](https://github.com/miloyip/rapidjson) (Only need the include folder on your include path, don't worry about compiling it)
+* A C++ compiler (GCC 5.0+ (Linux), XCode/Clang (OSX 10.7+), MSVC 14.0+ (Visual Studio 2015))
+* [rapidjson](https://github.com/Tencent/rapidjson) (Only need the include folder on your include path, don't worry about compiling it)
 

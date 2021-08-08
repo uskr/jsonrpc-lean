@@ -10,15 +10,12 @@
 #include <stdint.h>
 #include <string.h>
 #include <cassert>
-#include <ctime>
 #include <sstream>
 #include <iomanip>
 
 struct tm;
 
 namespace {
-
-    const char DATE_TIME_FORMAT[] = "%Y%m%dT%T";
 
     constexpr char BASE_64_ALPHABET[64 + 1] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -62,26 +59,6 @@ namespace {
 
 namespace jsonrpc {
     namespace util {
-
-        inline std::string FormatIso8601DateTime(const tm& dt) {
-            char str[128];
-            return std::string(str, strftime(str, sizeof(str), DATE_TIME_FORMAT, &dt));
-        }
-
-        inline bool ParseIso8601DateTime(const char* text, tm& dt) {
-            if (!text) {
-                return false;
-            }
-            memset(&dt, 0, sizeof(dt));
-            std::istringstream ss(text);
-            ss >> std::get_time(&dt, DATE_TIME_FORMAT);
-
-            if (ss.fail()) {
-                return false;
-            }
-            dt.tm_isdst = -1;
-            return true;
-        }
 
         inline std::string Base64Encode(const std::string& data); // forward declaration
 

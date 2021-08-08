@@ -19,14 +19,11 @@
 #include "fault.h"
 #include "writer.h"
 
-struct tm;
-
 namespace jsonrpc {
 
     class Value {
     public:
         typedef std::vector<Value> Array;
-        typedef tm DateTime;
         typedef std::string String;
         typedef std::map<std::string, Value> Struct;
 
@@ -34,7 +31,6 @@ namespace jsonrpc {
             ARRAY,
             BINARY,
             BOOLEAN,
-            DATE_TIME,
             DOUBLE,
             INTEGER_32,
             INTEGER_64,
@@ -50,11 +46,6 @@ namespace jsonrpc {
         }
 
         Value(bool value) : myType(Type::BOOLEAN) { as.myBoolean = value; }
-
-        Value(const DateTime& value) : myType(Type::DATE_TIME) {
-            as.myDateTime = new DateTime(value);
-            as.myDateTime->tm_isdst = -1;
-        }
 
         Value(double value) : myType(Type::DOUBLE) { as.myDouble = value; }
 
@@ -118,9 +109,6 @@ namespace jsonrpc {
             case Type::ARRAY:
                 as.myArray = new Array(other.AsArray());
                 break;
-            case Type::DATE_TIME:
-                as.myDateTime = new DateTime(other.AsDateTime());
-                break;
             case Type::BINARY:
             case Type::STRING:
                 as.myString = new String(other.AsString());
@@ -152,7 +140,6 @@ namespace jsonrpc {
         bool IsArray() const { return myType == Type::ARRAY; }
         bool IsBinary() const { return myType == Type::BINARY; }
         bool IsBoolean() const { return myType == Type::BOOLEAN; }
-        bool IsDateTime() const { return myType == Type::DATE_TIME; }
         bool IsDouble() const { return myType == Type::DOUBLE; }
         bool IsInteger32() const { return myType == Type::INTEGER_32; }
         bool IsInteger64() const { return myType == Type::INTEGER_64; }
@@ -172,13 +159,6 @@ namespace jsonrpc {
         const bool& AsBoolean() const {
             if (IsBoolean()) {
                 return as.myBoolean;
-            }
-            throw InvalidParametersFault();
-        }
-
-        const DateTime& AsDateTime() const {
-            if (IsDateTime()) {
-                return *as.myDateTime;
             }
             throw InvalidParametersFault();
         }
@@ -241,9 +221,6 @@ namespace jsonrpc {
             case Type::BOOLEAN:
                 writer.Write(as.myBoolean);
                 break;
-            case Type::DATE_TIME:
-                writer.Write(*as.myDateTime);
-                break;
             case Type::DOUBLE:
                 writer.Write(as.myDouble);
                 break;
@@ -280,9 +257,6 @@ namespace jsonrpc {
             case Type::ARRAY:
                 delete as.myArray;
                 break;
-            case Type::DATE_TIME:
-                delete as.myDateTime;
-                break;
             case Type::BINARY:
             case Type::STRING:
                 delete as.myString;
@@ -306,7 +280,6 @@ namespace jsonrpc {
         union {
             Array* myArray;
             bool myBoolean;
-            DateTime* myDateTime;
             String* myString;
             Struct* myStruct;
             struct {
@@ -323,10 +296,6 @@ namespace jsonrpc {
 
     template<> inline const bool& Value::AsType<bool>() const {
         return AsBoolean();
-    }
-
-    template<> inline const Value::DateTime& Value::AsType<typename Value::DateTime>() const {
-        return AsDateTime();
     }
 
     template<> inline const double& Value::AsType<double>() const {
@@ -380,9 +349,6 @@ namespace jsonrpc {
             break;
         case Value::Type::BOOLEAN:
             os << value.AsBoolean();
-            break;
-        case Value::Type::DATE_TIME:
-            os << util::FormatIso8601DateTime(value.AsDateTime());
             break;
         case Value::Type::DOUBLE:
             os << value.AsDouble();

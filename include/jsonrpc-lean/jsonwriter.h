@@ -160,10 +160,6 @@ namespace jsonrpc {
             myRequestData->Writer.String(value.data(), value.size(), true);
         }
 
-        void Write(const tm& value) override {
-            Write(util::FormatIso8601DateTime(value));
-        }
-
     private:
         void WriteId(const Value& id) {
             if (id.IsString() || id.IsInteger32() || id.IsInteger64() || id.IsNil()) {
